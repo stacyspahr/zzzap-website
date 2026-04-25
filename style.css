@@ -1,0 +1,129 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    background: #000;
+    color: #fff;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 60px 24px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.logo {
+    font-size: 64px;
+    margin-bottom: 8px;
+}
+
+h1 {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.tagline {
+    font-size: 20px;
+    color: #999;
+    margin-top: 8px;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 64px;
+}
+
+.hero p {
+    font-size: 18px;
+    color: #ccc;
+    max-width: 480px;
+    margin: 0 auto 32px;
+}
+
+.badge img {
+    height: 48px;
+    transition: opacity 0.2s;
+}
+
+.badge img:hover {
+    opacity: 0.8;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 32px;
+    margin-bottom: 80px;
+}
+
+.feature {
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: 16px;
+    background: #111;
+}
+
+.feature .icon {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.feature h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #f5c518;
+}
+
+.feature p {
+    font-size: 14px;
+    color: #999;
+}
+
+footer {
+    text-align: center;
+    border-top: 1px solid #222;
+    padding-top: 32px;
+}
+
+footer nav {
+    margin-bottom: 16px;
+}
+
+footer nav a {
+    color: #999;
+    text-decoration: none;
+    margin: 0 16px;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+footer nav a:hover {
+    color: #f5c518;
+}
+
+.copyright {
+    font-size: 12px;
+    color: #555;
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 36px; }
+    .tagline { font-size: 16px; }
+    .hero p { font-size: 16px; }
+    .features { grid-template-columns: 1fr; }
+    footer nav a { display: block; margin: 8px 0; }
+}
