@@ -69,7 +69,7 @@ h1 {
 .coming-soon {
     font-size: 32px;
     font-weight: 900;
-    color: #ff3b30;
+    color: #ff3b30 !important;
     letter-spacing: 4px;
     margin-bottom: 12px;
 }
