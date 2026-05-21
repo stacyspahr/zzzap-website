@@ -51,8 +51,94 @@ h1 {
     font-size: 18px;
     color: #ccc;
     max-width: 480px;
-    margin: 0 auto 32px;
+    margin: 0 auto 12px;
 }
+
+.hero .hero-lead {
+    font-size: 26px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.hero p:nth-of-type(2) {
+    margin-bottom: 32px;
+}
+
+/* Bolt + Storm narrative section */
+.duo {
+    margin-bottom: 64px;
+    text-align: center;
+}
+
+.duo-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
+}
+
+.duo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.duo-card {
+    padding: 24px 16px;
+    border-radius: 16px;
+    background: #111;
+    text-align: center;
+}
+
+.duo-icon {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.duo-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #f5c518;
+}
+
+.duo-card p {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.duo-tail {
+    font-size: 14px;
+    color: #999;
+    max-width: 480px;
+    margin: 0 auto;
+    font-style: italic;
+}
+
+/* Tier preview line */
+.tiers {
+    text-align: center;
+    margin-bottom: 64px;
+    padding: 0 16px;
+}
+
+.tiers-line {
+    font-size: 15px;
+    color: #ccc;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.tiers-line strong {
+    color: #f5c518;
+    font-weight: 600;
+}
+
 
 .badge img {
     height: 48px;
@@ -139,6 +225,9 @@ footer nav a:hover {
     h1 { font-size: 36px; }
     .tagline { font-size: 16px; }
     .hero p { font-size: 16px; }
+    .hero .hero-lead { font-size: 22px; }
+    .duo-title { font-size: 20px; }
+    .duo-grid { grid-template-columns: 1fr; }
     .features { grid-template-columns: 1fr; }
     footer nav a { display: block; margin: 8px 0; }
 }
