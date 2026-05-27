@@ -27,13 +27,15 @@ header {
     width: 120px;
     height: 120px;
     border-radius: 24px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
 }
 
 h1 {
     font-size: 48px;
     font-weight: 700;
     letter-spacing: -1px;
+    line-height: 1.1;
+    margin-top: 4px;
 }
 
 .tagline {
