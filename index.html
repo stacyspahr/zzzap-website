@@ -11,11 +11,35 @@
 <body>
     <div class="container">
         <header>
-            <img src="assets/marketing/wordmark-tagline-transparent.png"
-                 alt="Zzzap. Trusted Sources. Real Decisions."
-                 class="wordmark">
-            <h1 class="sr-only">Zzzap</h1>
-            <p class="sr-only">Trusted Sources. Real Decisions.</p>
+            <div class="brand-lockup">
+                <svg class="bolt-logo" viewBox="0 0 200 200" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="bolt-gradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#FFE033"/>
+                            <stop offset="100%" stop-color="#F08C00"/>
+                        </linearGradient>
+                        <clipPath id="strike-clip">
+                            <rect class="strike-rect" x="0" y="0" width="200" height="0"/>
+                        </clipPath>
+                    </defs>
+                    <g clip-path="url(#strike-clip)">
+                        <!-- Right bolt: tilted 25° clockwise around its bottom tip -->
+                        <path class="bolt right-bolt"
+                              d="M 108.34 12 L 70 111.97 L 98.5 111.97 L 91.66 188 L 130 88.03 L 101.5 88.03 Z"
+                              fill="url(#bolt-gradient)"/>
+                        <!-- Left bolt: mirrored, tilted 25° counter-clockwise -->
+                        <path class="bolt left-bolt"
+                              d="M 91.66 12 L 130 111.97 L 101.5 111.97 L 108.34 188 L 70 88.03 L 98.5 88.03 Z"
+                              fill="url(#bolt-gradient)"/>
+                    </g>
+                    <!-- Initial flash burst at the convergence point -->
+                    <circle class="flash" cx="100" cy="188" r="14" fill="#FFE033"/>
+                    <!-- Persistent spark at the convergence point -->
+                    <circle class="spark" cx="100" cy="188" r="11" fill="#FFE033"/>
+                </svg>
+                <h1 class="wordmark-text">Zzzap</h1>
+                <p class="tagline-nested">Trusted Sources. Real Decisions.</p>
+            </div>
         </header>
 
         <section class="hero">
@@ -75,5 +99,40 @@
             <p class="copyright">&copy; 2026 Rhapsy LLC. All rights reserved.</p>
         </footer>
     </div>
+    <script>
+    // Width-fit the tagline to the "Zzza" prefix of the wordmark using a
+    // Canvas measurement and binary search. Same algorithm as the iOS
+    // home-screen lockup and the Python wordmark generator — guarantees
+    // the tagline's right edge stops where the p starts, regardless of
+    // the system fonts the browser actually rendered.
+    (function fitTagline() {
+        const wordmark = document.querySelector('.wordmark-text');
+        const tagline = document.querySelector('.tagline-nested');
+        if (!wordmark || !tagline) return;
+        const cs = getComputedStyle(wordmark);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const zzzaWidth = ctx.measureText('Zzza').width;
+        const wordmarkWidth = ctx.measureText('Zzzap').width;
+        const text = tagline.textContent.trim();
+        let lo = 6, hi = 40, best = 6;
+        const tagFamily = getComputedStyle(tagline).fontFamily;
+        while (hi - lo > 0.25) {
+            const mid = (lo + hi) / 2;
+            ctx.font = `400 ${mid}px ${tagFamily}`;
+            const w = ctx.measureText(text).width;
+            if (w <= zzzaWidth) { best = mid; lo = mid + 0.25; }
+            else                { hi = mid - 0.25; }
+        }
+        tagline.style.fontSize = best + 'px';
+        // Left-align tagline with wordmark's visual left edge by setting an
+        // explicit pixel width and centering the whole block.
+        tagline.style.width = wordmarkWidth + 'px';
+        const offset = (wordmarkWidth - zzzaWidth) / 2;
+        tagline.style.paddingLeft = '0';
+        tagline.style.paddingRight = offset * 2 + 'px';
+    })();
+    </script>
 </body>
 </html>

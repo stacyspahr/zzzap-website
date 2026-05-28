@@ -43,6 +43,123 @@ header {
     border: 0;
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Brand lockup — animated SVG bolt + Zzzap wordmark + nested tagline.
+   Mirrors the iOS home-screen lockup. Bolt strikes top-down, a flash
+   bursts at the convergence point, then settles into a persistent
+   pulsing spark + asymmetric flicker on each bolt half.
+   ────────────────────────────────────────────────────────────────── */
+
+.brand-lockup {
+    text-align: center;
+}
+
+.bolt-logo {
+    width: 240px;
+    height: 240px;
+    display: block;
+    margin: 0 auto -28px;     /* tuck wordmark up into bolt's lower glow */
+    filter: drop-shadow(0 0 4px rgba(255, 224, 51, 0.55));
+    animation: glow 1.8s ease-in-out 0.55s infinite alternate;
+}
+
+.wordmark-text {
+    font-size: 80px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+    color: #fff;
+    margin: 0;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-in 0.55s forwards;
+}
+
+.tagline-nested {
+    font-size: 14px;          /* JS will refit at load time */
+    color: #999;
+    line-height: 1;
+    margin: -14px auto 0;     /* tuck into the descender of "p" */
+    opacity: 0;
+    width: 76%;               /* approx width of "Zzza" — JS refits exactly */
+    text-align: left;
+    animation: fadeIn 0.5s ease-in 0.95s forwards;
+}
+
+/* Strike — top-down reveal of the bolt shapes */
+@keyframes strike {
+    from { height: 0; }
+    to   { height: 200px; }
+}
+.strike-rect {
+    animation: strike 0.38s ease-in forwards;
+}
+
+/* Initial flash burst at the convergence point */
+@keyframes flash {
+    0%   { opacity: 0; }
+    79%  { opacity: 0; }
+    82%  { opacity: 0.95; }   /* peaks at ~0.30s into the 0.38s strike */
+    100% { opacity: 0; }
+}
+.flash {
+    opacity: 0;
+    filter: blur(9px);
+    animation: flash 0.95s ease-out forwards;
+}
+
+/* Persistent pulsing spark, kicks in after the flash */
+@keyframes sparkPulse {
+    0%, 100% { opacity: 0.6; }
+    25%      { opacity: 0.95; }
+    50%      { opacity: 0.4; }
+    75%      { opacity: 0.85; }
+}
+.spark {
+    opacity: 0;
+    filter: blur(8px);
+    animation:
+        fadeIn 0.3s ease-in 0.85s forwards,
+        sparkPulse 2.6s ease-in-out 1.15s infinite;
+}
+
+/* Outer glow pulse — gentle breathing on the bolts after the strike */
+@keyframes glow {
+    from { filter: drop-shadow(0 0 4px rgba(255, 224, 51, 0.55)); }
+    to   { filter: drop-shadow(0 0 18px rgba(255, 224, 51, 0.85)); }
+}
+
+/* Flicker — asymmetric so the two halves never sync up */
+@keyframes flickerLeft {
+    0%, 32%, 38%, 100% { opacity: 1; }
+    33%                { opacity: 0.3; }
+    34%                { opacity: 1; }
+    36%                { opacity: 0.4; }
+}
+@keyframes flickerRight {
+    0%, 64%, 70%, 100% { opacity: 1; }
+    65%                { opacity: 0.35; }
+    66%                { opacity: 1; }
+    68%                { opacity: 0.45; }
+}
+.left-bolt  { animation: flickerLeft 4.2s linear 0.85s infinite; }
+.right-bolt { animation: flickerRight 5.7s linear 0.85s infinite; }
+
+/* Reusable fade-in */
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .strike-rect, .flash, .spark, .left-bolt, .right-bolt, .bolt-logo,
+    .wordmark-text, .tagline-nested {
+        animation: none;
+    }
+    .strike-rect { height: 200px; }
+    .spark { opacity: 0.6; }
+    .wordmark-text, .tagline-nested { opacity: 1; }
+}
+
 .hero {
     text-align: center;
     margin-bottom: 64px;
