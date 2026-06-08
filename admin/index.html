@@ -9,7 +9,52 @@
     <style>
         /* Admin-specific overrides on top of the marketing site palette */
         body { padding-bottom: 64px; }
-        .admin-container { max-width: 720px; margin: 0 auto; padding: 40px 24px; }
+        .admin-container { max-width: 1080px; margin: 0 auto; padding: 40px 24px; }
+
+        /* Two-column layout: templates sidebar + main form area. */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 820px) {
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+
+        .templates-card {
+            position: sticky;
+            top: 24px;
+        }
+        .templates-card h2 { margin-bottom: 8px; }
+        .templates-card .templates-tail {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 12px;
+        }
+        .template-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 1px solid #222;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+        .template-btn:hover { border-color: #f5c518; color: #fff; }
+        .template-btn .template-cat {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #f5c518;
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
 
         .admin-header {
             display: flex;
@@ -188,6 +233,16 @@
                 </div>
             </div>
 
+            <div class="admin-grid">
+
+            <!-- Templates sidebar -->
+            <div class="card templates-card">
+                <h2>Templates</h2>
+                <p class="templates-tail">Click to fill the form. Edit before sending.</p>
+                <div id="templates-list"></div>
+            </div>
+
+            <div>
             <!-- Compose card -->
             <div class="card">
                 <h2>Send a zzzap as Zzzap Official</h2>
@@ -250,6 +305,8 @@
                     <p style="color:#666; font-size:13px;">Loading…</p>
                 </div>
             </div>
+            </div> <!-- /right column -->
+            </div> <!-- /admin-grid -->
         </div>
     </div>
 
@@ -437,6 +494,93 @@
                 sendBtn.disabled = false;
                 sendBtn.textContent = "Send as Zzzap Official";
             }
+        });
+
+        // ───────────────────────────────────────────────────────────────
+        // Templates — click to fill the compose form
+        // ───────────────────────────────────────────────────────────────
+        // Edit this array to add/remove/rewrite templates. Keep options
+        // to 4 or fewer for best UX. timeLimit is in minutes.
+        const templates = [
+            // AWARENESS — find out who knows about each feature
+            { category: "Awareness", name: "Tried a Storm?",
+              question: "Have you tried sending a Storm yet?",
+              options: ["Yes", "No, not yet", "What's a Storm?"],
+              timeLimit: 1440 },
+            { category: "Awareness", name: "Lock-screen voting?",
+              question: "Have you voted on a zzzap from your lock screen?",
+              options: ["Yes, love it", "Didn't know you could", "Tried but it didn't work"],
+              timeLimit: 1440 },
+            { category: "Awareness", name: "Smart Groups?",
+              question: "Have you used Smart Groups (Close Friends, Family, etc.)?",
+              options: ["Yes", "Saw them, don't really get them", "What are those?"],
+              timeLimit: 1440 },
+            { category: "Awareness", name: "Private zzzaps?",
+              question: "Have you sent a private zzzap?",
+              options: ["Yes", "Not yet", "What does private mean here?"],
+              timeLimit: 1440 },
+            { category: "Awareness", name: "Scheduling?",
+              question: "Did you know you can schedule a zzzap for later?",
+              options: ["Yes, used it", "Where?", "I do now"],
+              timeLimit: 1440 },
+
+            // FRICTION — find out what's confusing
+            { category: "Friction", name: "Most confusing part",
+              question: "What's the most confusing part of Zzzap right now?",
+              options: ["The invite gate", "Creating a Storm", "Voting", "Nothing really"],
+              timeLimit: 2880 },
+            { category: "Friction", name: "Where you get stuck",
+              question: "Where do you get stuck most often in Zzzap?",
+              options: ["Picking recipients", "Writing options", "Understanding results", "I don't"],
+              timeLimit: 2880 },
+
+            // PRIORITIZATION — let testers shape Power
+            { category: "Prioritization", name: "Most-wanted Power feature",
+              question: "Which Power feature would you actually pay for?",
+              options: ["Photo zzzaps", "Private zzzaps", "Open ballots", "Bigger groups"],
+              timeLimit: 2880 },
+            { category: "Prioritization", name: "Invite cap?",
+              question: "Is 15 recipients per zzzap enough for your decisions?",
+              options: ["Plenty", "Sometimes I need more", "Need way more"],
+              timeLimit: 2880 },
+
+            // QUICK — pure activity-driver
+            { category: "Quick", name: "Friday plans?",
+              question: "What are you doing this Friday night?",
+              options: ["Going out", "Staying in", "Working", "No plans yet"],
+              timeLimit: 1440 },
+        ];
+
+        const templatesList = document.getElementById("templates-list");
+
+        function renderTemplates() {
+            templatesList.innerHTML = templates.map((t, i) => `
+                <button type="button" class="template-btn" data-idx="${i}">
+                    <span class="template-cat">${escapeHtml(t.category)}</span>
+                    ${escapeHtml(t.name)}
+                </button>
+            `).join("");
+        }
+        renderTemplates();
+
+        templatesList.addEventListener("click", (e) => {
+            const btn = e.target.closest(".template-btn");
+            if (!btn) return;
+            const t = templates[parseInt(btn.dataset.idx, 10)];
+            if (!t) return;
+            // Fill the form
+            document.getElementById("question").value = t.question;
+            // Rebuild option rows to exactly match the template
+            optionsContainer.innerHTML = t.options.map((opt, i) => `
+                <div class="option-row">
+                    <input type="text" placeholder="Option ${i + 1}" class="option-input" value="${escapeHtml(opt)}" required>
+                    <button type="button" class="remove-option" title="Remove">×</button>
+                </div>
+            `).join("");
+            document.getElementById("time-limit").value = String(t.timeLimit);
+            // Scroll the form into view on mobile where the sidebar stacks above
+            document.getElementById("question").focus();
+            document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
         });
 
         // ───────────────────────────────────────────────────────────────
