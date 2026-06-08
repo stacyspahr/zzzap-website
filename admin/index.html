@@ -569,26 +569,35 @@
         // (you'll want follow-up); Friction = false (anonymity gets
         // more honest criticism). Override per-template if needed.
         const templates = [
-            // AWARENESS — find out who knows about each feature
+            // AWARENESS — find out who knows about each feature.
+            // Options use the "implementation intention" pattern: instead
+            // of a passive "no," every option is an active state — already
+            // doing it, will do it now, or need help. Picking "I'll try
+            // one now" creates a small public commitment that nudges
+            // follow-through. No passive "no" option.
             { category: "Awareness", name: "Tried a Storm?",
-              question: "Have you tried sending a Storm yet?",
-              options: ["Yes", "No, not yet", "What's a Storm?"],
+              question: "Did you know you can send a Storm (write-in answers, no preset options)?",
+              options: ["Yes, used it", "No — I'll try one now", "Show me how"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Lock-screen voting?",
-              question: "Have you voted on a zzzap from your lock screen?",
-              options: ["Yes, love it", "Didn't know you could", "Tried but it didn't work"],
+              question: "Did you know you can vote on a zzzap right from your lock screen (long-press the notification)?",
+              options: ["Yes, love it", "No — I'll try it next time", "Tried, didn't work"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Smart Groups?",
-              question: "Have you used Smart Groups (Close Friends, Family, etc.)?",
-              options: ["Yes", "Saw them, don't really get them", "What are those?"],
+              question: "Did you know you can use Smart Groups (Close Friends, Family, etc.) to reuse audiences?",
+              options: ["Yes, use them", "No — I'll set one up now", "Show me how"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Private zzzaps?",
-              question: "Have you sent a private zzzap?",
-              options: ["Yes", "Not yet", "What does private mean here?"],
+              question: "Did you know you can send a private zzzap (results vanish after viewing)?",
+              options: ["Yes, sent one", "No — I'll send one now", "What does private mean?"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Scheduling?",
               question: "Did you know you can schedule a zzzap for later?",
-              options: ["Yes, used it", "Where?", "I do now"],
+              options: ["Yes, used it", "No — I'll try it now", "Show me where"],
+              timeLimit: 1440, openBallot: true },
+            { category: "Awareness", name: "Pin a zzzap?",
+              question: "Did you know you can pin a zzzap to the top of your feed (swipe right)?",
+              options: ["Yes, use it", "No — I'll try it now", "Show me how"],
               timeLimit: 1440, openBallot: true },
 
             // FRICTION — find out what's confusing
