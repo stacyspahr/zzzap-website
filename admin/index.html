@@ -166,7 +166,15 @@
         <div id="signin-view" class="card signin-card">
             <h1>⚡⚡ Zzzap Admin Console</h1>
             <p>Sign in to send zzzaps as Zzzap Official.</p>
-            <button id="signin-btn" class="btn-primary">Sign in with Google</button>
+            <form id="signin-form" style="max-width: 320px; margin: 0 auto;">
+                <div class="form-row">
+                    <input type="email" id="signin-email" placeholder="Email" autocomplete="username" required>
+                </div>
+                <div class="form-row">
+                    <input type="password" id="signin-password" placeholder="Password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" id="signin-btn" class="btn-primary" style="width: 100%; padding: 14px;">Sign in</button>
+            </form>
             <div id="signin-error" class="status-message error"></div>
         </div>
 
@@ -274,7 +282,7 @@
         // Firebase Web SDK v10 (modular, ESM via CDN)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
         import {
-            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+            getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
             getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp
@@ -306,18 +314,30 @@
         // ───────────────────────────────────────────────────────────────
         const signinView = document.getElementById("signin-view");
         const adminView = document.getElementById("admin-view");
+        const signinForm = document.getElementById("signin-form");
         const signinBtn = document.getElementById("signin-btn");
         const signinError = document.getElementById("signin-error");
         const signoutBtn = document.getElementById("signout-btn");
         const userName = document.getElementById("user-name");
 
-        signinBtn.addEventListener("click", async () => {
+        // Persist auth across page reloads so we don't have to sign in
+        // every time we open a new tab.
+        setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+        signinForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
             signinError.textContent = "";
+            signinBtn.disabled = true;
+            signinBtn.textContent = "Signing in…";
             try {
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
+                const email = document.getElementById("signin-email").value.trim();
+                const password = document.getElementById("signin-password").value;
+                await signInWithEmailAndPassword(auth, email, password);
             } catch (err) {
                 signinError.textContent = err.message;
+            } finally {
+                signinBtn.disabled = false;
+                signinBtn.textContent = "Sign in";
             }
         });
 
@@ -329,7 +349,7 @@
             if (user) {
                 signinView.classList.add("hidden");
                 adminView.classList.remove("hidden");
-                userName.textContent = user.displayName || user.email || "Admin";
+                userName.textContent = user.email || user.displayName || "Admin";
                 console.log("[ADMIN] signed in as", user.uid, "— send this UID to Zak for the allowlist");
                 startRecentListener();
             } else {
