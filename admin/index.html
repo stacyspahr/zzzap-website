@@ -50,13 +50,19 @@
         }
         .template-btn:hover { border-color: #f5c518; color: #fff; }
         .template-btn .template-cat {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #f5c518;
             margin-bottom: 2px;
             font-weight: 700;
+        }
+        .template-btn .template-icon {
+            font-size: 12px;
+            line-height: 1;
         }
 
         .admin-header {
@@ -610,12 +616,22 @@
         const templatesList = document.getElementById("templates-list");
 
         function renderTemplates() {
-            templatesList.innerHTML = templates.map((t, i) => `
+            templatesList.innerHTML = templates.map((t, i) => {
+                // Bolt iconography rule: single bolt = Strike (decisive
+                // moment), tornado = Storm (brainstorm). Matches the iOS
+                // app + the marketing site's duo cards.
+                const isStorm = t.type === "storm";
+                const icon = isStorm ? "&#127786;" : "&#9889;";
+                return `
                 <button type="button" class="template-btn" data-idx="${i}">
-                    <span class="template-cat">${escapeHtml(t.category)}</span>
+                    <span class="template-cat">
+                        <span class="template-icon">${icon}</span>
+                        ${escapeHtml(t.category)}
+                    </span>
                     ${escapeHtml(t.name)}
                 </button>
-            `).join("");
+                `;
+            }).join("");
         }
         renderTemplates();
 
