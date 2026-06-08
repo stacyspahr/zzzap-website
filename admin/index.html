@@ -616,40 +616,41 @@
         // (you'll want follow-up); Friction = false (anonymity gets
         // more honest criticism). Override per-template if needed.
         const templates = [
+            // Voice locked: see memory/project-zzzap-official-voice.md.
+            // Editorial, adult, trusted. Lead with the question, no
+            // preamble. No em dashes (use periods). No urgency words.
+            // Implementation-intention voter options stay — they're the
+            // voter committing to themselves, which is the one place
+            // "now" is allowed.
+
             // AWARENESS — find out who knows about each feature.
-            // Options use the "implementation intention" pattern: instead
-            // of a passive "no," every option is an active state — already
-            // doing it, will do it now, or need help. Picking "I'll try
-            // one now" creates a small public commitment that nudges
-            // follow-through. No passive "no" option.
             { category: "Awareness", name: "Tried a Storm?",
-              question: "Did you know you can send a Storm (write-in answers, no preset options)?",
-              options: ["Yes, used it", "No — I'll try one now", "Show me how"],
+              question: "Have you sent a Storm yet? It's the write-in version. No preset options.",
+              options: ["Yes, used it", "Not yet. Trying one now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Lock-screen voting?",
-              question: "Did you know you can vote on a zzzap right from your lock screen (long-press the notification)?",
-              options: ["Yes, love it", "No — I'll try it next time", "Tried, didn't work"],
+              question: "Have you voted on a zzzap from the lock screen yet? Long-press the notification to see options.",
+              options: ["Yes, love it", "Not yet. Trying it next time.", "Tried, didn't work"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Smart Groups?",
-              question: "Did you know you can use Smart Groups (Close Friends, Family, etc.) to reuse audiences?",
-              options: ["Yes, use them", "No — I'll set one up now", "Show me how"],
+              question: "Have you used Smart Groups yet? Close Friends, Family, and a few others.",
+              options: ["Yes, use them", "Not yet. Setting one up now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Private zzzaps?",
-              question: "Did you know you can send a private zzzap (results vanish after viewing)?",
-              options: ["Yes, sent one", "No — I'll send one now", "What does private mean?"],
+              question: "Have you sent a private zzzap? Results vanish 30 seconds after viewing.",
+              options: ["Yes, sent one", "Not yet. Sending one now.", "What does private mean?"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Scheduling?",
-              question: "Did you know you can schedule a zzzap for later?",
-              options: ["Yes, used it", "No — I'll try it now", "Show me where"],
+              question: "Have you scheduled a zzzap to send later?",
+              options: ["Yes, used it", "Not yet. Trying it now.", "Show me where"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Pin a zzzap?",
-              question: "Did you know you can pin a zzzap to the top of your feed (long-press the row)?",
-              options: ["Yes, use it", "No — I'll try it now", "Show me how"],
+              question: "Have you pinned a zzzap to the top of your feed? Long-press the row.",
+              options: ["Yes, use it", "Not yet. Trying it now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
 
-            // FRICTION — find out what's confusing
-            // Closed by default — people are more honest about
-            // criticism when their name isn't attached.
+            // FRICTION — sober, direct. Closed ballot by default for
+            // honest criticism.
             { category: "Friction", name: "Most confusing part",
               question: "What's the most confusing part of Zzzap right now?",
               options: ["The invite gate", "Creating a Storm", "Voting", "Nothing really"],
@@ -660,13 +661,13 @@
               timeLimit: 2880, openBallot: false },
             { category: "Friction", name: "What's missing? (Storm)",
               type: "storm",
-              question: "What feature is missing that would make Zzzap great for you?",
+              question: "What's one thing Zzzap is missing for you?",
               stormCharLimit: 50,
               timeLimit: 4320, openBallot: false },
 
-            // PRIORITIZATION — let testers shape Power
+            // PRIORITIZATION — editorial framing.
             { category: "Prioritization", name: "Most-wanted Power feature",
-              question: "Which Power feature would you actually pay for?",
+              question: "Which Power feature would unlock real value for you?",
               options: ["Photo zzzaps", "Private zzzaps", "Open ballots", "Bigger groups"],
               timeLimit: 2880, openBallot: true },
             { category: "Prioritization", name: "Invite cap?",
@@ -675,13 +676,13 @@
               timeLimit: 2880, openBallot: true },
             { category: "Prioritization", name: "Dream feature (Storm)",
               type: "storm",
-              question: "If you could add ONE feature to Zzzap tomorrow, what would it be?",
+              question: "If you could add one feature to Zzzap, what would it be?",
               stormCharLimit: 50,
               timeLimit: 4320, openBallot: true },
 
-            // QUICK — pure activity-driver
+            // QUICK — voice can relax slightly for real-life filler.
             { category: "Quick", name: "Friday plans?",
-              question: "What are you doing this Friday night?",
+              question: "What are you doing Friday night?",
               options: ["Going out", "Staying in", "Working", "No plans yet"],
               timeLimit: 1440, openBallot: true },
         ];
