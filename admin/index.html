@@ -596,7 +596,7 @@
                 collection(db, "polls"),
                 where("creatorId", "==", "zzzap_official"),
                 orderBy("createdAt", "desc"),
-                limit(20)
+                limit(30)
             );
             recentUnsub = onSnapshot(q,
                 (snap) => {
@@ -604,12 +604,35 @@
                         recentList.innerHTML = `<p style="color:#666; font-size:13px;">No zzzaps from Zzzap Official yet.</p>`;
                         return;
                     }
-                    recentList.innerHTML = snap.docs.map(d => renderRecent(d.id, d.data())).join("");
+                    const docs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+                    const paceLine = renderPace(docs);
+                    const rows = docs.map(d => renderRecent(d.id, d.data)).join("");
+                    recentList.innerHTML = paceLine + rows;
                 },
                 (err) => {
                     recentList.innerHTML = `<p style="color:#ff453a; font-size:13px;">Couldn't load: ${err.message}<br><small>(Make sure Zak added your UID to the admins allowlist + the Firestore rule that lets admins read brand polls.)</small></p>`;
                 }
             );
+        }
+
+        // Computes how many zzzaps went out in the last 7 and 30 days so
+        // Stacy can gut-check cadence at a glance without scrolling.
+        function renderPace(docs) {
+            const now = Date.now();
+            const day = 24 * 60 * 60 * 1000;
+            const last7 = docs.filter(d => {
+                const t = d.data.createdAt?.toDate?.()?.getTime?.() ?? 0;
+                return now - t < 7 * day;
+            }).length;
+            const last30 = docs.filter(d => {
+                const t = d.data.createdAt?.toDate?.()?.getTime?.() ?? 0;
+                return now - t < 30 * day;
+            }).length;
+            return `
+                <div style="color:#999; font-size:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #222;">
+                    <strong style="color:#f5c518;">${last7}</strong> in the last 7 days · <strong style="color:#f5c518;">${last30}</strong> in the last 30 days
+                </div>
+            `;
         }
 
         function renderRecent(id, data) {
@@ -623,14 +646,16 @@
             const statusClass = isActive ? "status-active" : "status-closed";
             const createdAt = data.createdAt?.toDate?.() || data.createdAt;
             const ago = createdAt ? timeAgo(createdAt) : "—";
+            const absolute = createdAt ? formatAbsolute(createdAt) : "";
             return `
                 <div class="recent-zzzap">
                     <div class="question">${escapeHtml(data.question || "(no question)")}</div>
                     <div class="meta">
                         <span class="${statusClass}">${statusLabel}</span>
                         <span>${voters} of ${total} voted</span>
-                        <span>Sent ${ago}</span>
+                        <span title="${absolute}">${ago}</span>
                     </div>
+                    <div style="margin-top:4px; color:#555; font-size:11px;">${absolute}</div>
                 </div>
             `;
         }
@@ -644,6 +669,21 @@
             if (hrs < 24) return `${hrs}h ago`;
             const days = Math.floor(hrs / 24);
             return `${days}d ago`;
+        }
+
+        // Compact local-time absolute format. Today/yesterday get a label
+        // instead of the date for quick scanning.
+        function formatAbsolute(date) {
+            const now = new Date();
+            const sameDay = now.toDateString() === date.toDateString();
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday = yesterday.toDateString() === date.toDateString();
+            const time = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+            if (sameDay) return `Today at ${time}`;
+            if (isYesterday) return `Yesterday at ${time}`;
+            const dateStr = date.toLocaleDateString([], { month: "short", day: "numeric" });
+            return `${dateStr} at ${time}`;
         }
 
         function escapeHtml(s) {
