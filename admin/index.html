@@ -251,11 +251,20 @@
                 <h2>Send a zzzap as Zzzap Official</h2>
                 <form id="compose-form">
                     <div class="form-row">
+                        <label for="poll-type">Type</label>
+                        <select id="poll-type">
+                            <option value="strike" selected>Strike (predefined options)</option>
+                            <option value="storm">Storm (write-in answers)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
                         <label for="question">Question</label>
                         <textarea id="question" placeholder="e.g. Have you tried sending a Storm yet?" required></textarea>
                     </div>
 
-                    <div class="form-row">
+                    <!-- Options section: only shown for Strikes -->
+                    <div class="form-row" id="options-row">
                         <label>Options</label>
                         <div id="options-container">
                             <div class="option-row">
@@ -268,6 +277,17 @@
                             </div>
                         </div>
                         <button type="button" id="add-option" class="add-option">+ Add option</button>
+                    </div>
+
+                    <!-- Storm character limit: only shown for Storms -->
+                    <div class="form-row hidden" id="storm-limit-row">
+                        <label for="storm-char-limit">Voter character limit (Storm)</label>
+                        <select id="storm-char-limit">
+                            <option value="20">20 chars (one word / phrase)</option>
+                            <option value="30" selected>30 chars (default)</option>
+                            <option value="50">50 chars (short sentence)</option>
+                            <option value="100">100 chars (longer answer)</option>
+                        </select>
                     </div>
 
                     <div class="form-row">
@@ -454,6 +474,23 @@
             customUidsRow.classList.toggle("hidden", recipientsSel.value !== "custom");
         });
 
+        // Storm vs Strike: toggle which fields are visible + required.
+        const pollTypeSel = document.getElementById("poll-type");
+        const optionsRow = document.getElementById("options-row");
+        const stormLimitRow = document.getElementById("storm-limit-row");
+        function applyPollType() {
+            const isStorm = pollTypeSel.value === "storm";
+            optionsRow.classList.toggle("hidden", isStorm);
+            stormLimitRow.classList.toggle("hidden", !isStorm);
+            // Strip the required attribute from options when Storm so
+            // form validation doesn't block submit on an empty options row.
+            document.querySelectorAll(".option-input").forEach(i => {
+                if (isStorm) i.removeAttribute("required");
+                else i.setAttribute("required", "");
+            });
+        }
+        pollTypeSel.addEventListener("change", applyPollType);
+
         composeForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             composeStatus.textContent = "";
@@ -462,11 +499,17 @@
             sendBtn.textContent = "Sending…";
 
             try {
+                const pollType = pollTypeSel.value;
                 const question = document.getElementById("question").value.trim();
-                const options = [...document.querySelectorAll(".option-input")]
-                    .map(i => i.value.trim())
-                    .filter(v => v.length > 0);
+                const options = pollType === "storm"
+                    ? []
+                    : [...document.querySelectorAll(".option-input")]
+                        .map(i => i.value.trim())
+                        .filter(v => v.length > 0);
                 const timeLimit = parseInt(document.getElementById("time-limit").value, 10);
+                const stormCharLimit = pollType === "storm"
+                    ? parseInt(document.getElementById("storm-char-limit").value, 10)
+                    : null;
                 const mode = recipientsSel.value;
                 const customUidsRaw = document.getElementById("custom-uids").value;
                 const recipients = mode === "custom"
@@ -474,7 +517,7 @@
                     : []; // empty array = "all" — Cloud Function expands to all followers
 
                 const composeFn = httpsCallable(functions, "composeBrandPoll");
-                const result = await composeFn({ question, options, timeLimit, recipients, mode });
+                const result = await composeFn({ pollType, question, options, timeLimit, stormCharLimit, recipients, mode });
 
                 composeStatus.textContent = `Sent! Poll ID: ${result.data.pollId}`;
                 composeStatus.classList.add("success");
@@ -536,6 +579,11 @@
               question: "Where do you get stuck most often in Zzzap?",
               options: ["Picking recipients", "Writing options", "Understanding results", "I don't"],
               timeLimit: 2880 },
+            { category: "Friction", name: "What's missing? (Storm)",
+              type: "storm",
+              question: "What feature is missing that would make Zzzap great for you?",
+              stormCharLimit: 50,
+              timeLimit: 4320 },
 
             // PRIORITIZATION — let testers shape Power
             { category: "Prioritization", name: "Most-wanted Power feature",
@@ -546,6 +594,11 @@
               question: "Is 15 recipients per zzzap enough for your decisions?",
               options: ["Plenty", "Sometimes I need more", "Need way more"],
               timeLimit: 2880 },
+            { category: "Prioritization", name: "Dream feature (Storm)",
+              type: "storm",
+              question: "If you could add ONE feature to Zzzap tomorrow, what would it be?",
+              stormCharLimit: 50,
+              timeLimit: 4320 },
 
             // QUICK — pure activity-driver
             { category: "Quick", name: "Friday plans?",
@@ -571,16 +624,26 @@
             if (!btn) return;
             const t = templates[parseInt(btn.dataset.idx, 10)];
             if (!t) return;
-            // Fill the form
+            const isStorm = t.type === "storm";
+            // Type picker first (drives which fields are visible/required)
+            pollTypeSel.value = isStorm ? "storm" : "strike";
+            applyPollType();
+            // Question + time limit always apply
             document.getElementById("question").value = t.question;
-            // Rebuild option rows to exactly match the template
-            optionsContainer.innerHTML = t.options.map((opt, i) => `
-                <div class="option-row">
-                    <input type="text" placeholder="Option ${i + 1}" class="option-input" value="${escapeHtml(opt)}" required>
-                    <button type="button" class="remove-option" title="Remove">×</button>
-                </div>
-            `).join("");
             document.getElementById("time-limit").value = String(t.timeLimit);
+            if (isStorm) {
+                if (t.stormCharLimit) {
+                    document.getElementById("storm-char-limit").value = String(t.stormCharLimit);
+                }
+            } else if (t.options) {
+                // Rebuild option rows to match the template exactly
+                optionsContainer.innerHTML = t.options.map((opt, i) => `
+                    <div class="option-row">
+                        <input type="text" placeholder="Option ${i + 1}" class="option-input" value="${escapeHtml(opt)}" required>
+                        <button type="button" class="remove-option" title="Remove">×</button>
+                    </div>
+                `).join("");
+            }
             // Scroll the form into view on mobile where the sidebar stacks above
             document.getElementById("question").focus();
             document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -647,9 +710,13 @@
             const createdAt = data.createdAt?.toDate?.() || data.createdAt;
             const ago = createdAt ? timeAgo(createdAt) : "—";
             const absolute = createdAt ? formatAbsolute(createdAt) : "";
+            const isStorm = (data.pollType || "").toLowerCase() === "storm";
+            const typeBadge = isStorm
+                ? `<span style="font-size:10px; font-weight:700; color:#000; background:#f5c518; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">STORM</span>`
+                : "";
             return `
                 <div class="recent-zzzap">
-                    <div class="question">${escapeHtml(data.question || "(no question)")}</div>
+                    <div class="question">${typeBadge} ${escapeHtml(data.question || "(no question)")}</div>
                     <div class="meta">
                         <span class="${statusClass}">${statusLabel}</span>
                         <span>${voters} of ${total} voted</span>
