@@ -9,14 +9,17 @@
     <style>
         /* Admin-specific overrides on top of the marketing site palette */
         body { padding-bottom: 64px; }
-        .admin-container { max-width: 1080px; margin: 0 auto; padding: 40px 24px; }
+        .admin-container { max-width: 880px; margin: 0 auto; padding: 40px 24px; }
 
-        /* Two-column layout: templates sidebar + main form area. */
+        /* Two-column layout: templates sidebar + main form area. The
+           form column is capped at a comfortable reading width so the
+           inputs don't stretch ridiculously wide on big screens. */
         .admin-grid {
             display: grid;
-            grid-template-columns: 260px 1fr;
+            grid-template-columns: 220px minmax(0, 520px);
             gap: 24px;
             align-items: start;
+            justify-content: start;
         }
         @media (max-width: 820px) {
             .admin-grid { grid-template-columns: 1fr; }
