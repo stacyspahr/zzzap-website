@@ -320,6 +320,16 @@
                         <textarea id="custom-uids" placeholder="uid1, uid2, uid3"></textarea>
                     </div>
 
+                    <div class="form-row" style="display: flex; align-items: flex-start; gap: 10px;">
+                        <input type="checkbox" id="open-ballot" checked style="margin-top: 4px; accent-color: #f5c518;">
+                        <label for="open-ballot" style="margin-bottom: 0; cursor: pointer; flex: 1;">
+                            <strong style="color: #fff; font-size: 14px;">Open ballot</strong> <span style="color:#666; font-size:11px;">(you'll see who voted what)</span>
+                            <div style="font-size: 11px; color: #666; margin-top: 2px; line-height: 1.4;">
+                                Turn OFF for friction or criticism questions where anonymity gets you more honest answers.
+                            </div>
+                        </label>
+                    </div>
+
                     <div class="send-row">
                         <button type="submit" id="send-btn" class="btn-primary">Send as Zzzap Official</button>
                         <div id="compose-status" class="status-message"></div>
@@ -522,8 +532,10 @@
                     ? customUidsRaw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean)
                     : []; // empty array = "all" — Cloud Function expands to all followers
 
+                const openBallot = document.getElementById("open-ballot").checked;
+
                 const composeFn = httpsCallable(functions, "composeBrandPoll");
-                const result = await composeFn({ pollType, question, options, timeLimit, stormCharLimit, recipients, mode });
+                const result = await composeFn({ pollType, question, options, timeLimit, stormCharLimit, openBallot, recipients, mode });
 
                 composeStatus.textContent = `Sent! Poll ID: ${result.data.pollId}`;
                 composeStatus.classList.add("success");
@@ -553,64 +565,69 @@
         // ───────────────────────────────────────────────────────────────
         // Edit this array to add/remove/rewrite templates. Keep options
         // to 4 or fewer for best UX. timeLimit is in minutes.
+        // openBallot defaults: Awareness/Prioritization/Quick = true
+        // (you'll want follow-up); Friction = false (anonymity gets
+        // more honest criticism). Override per-template if needed.
         const templates = [
             // AWARENESS — find out who knows about each feature
             { category: "Awareness", name: "Tried a Storm?",
               question: "Have you tried sending a Storm yet?",
               options: ["Yes", "No, not yet", "What's a Storm?"],
-              timeLimit: 1440 },
+              timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Lock-screen voting?",
               question: "Have you voted on a zzzap from your lock screen?",
               options: ["Yes, love it", "Didn't know you could", "Tried but it didn't work"],
-              timeLimit: 1440 },
+              timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Smart Groups?",
               question: "Have you used Smart Groups (Close Friends, Family, etc.)?",
               options: ["Yes", "Saw them, don't really get them", "What are those?"],
-              timeLimit: 1440 },
+              timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Private zzzaps?",
               question: "Have you sent a private zzzap?",
               options: ["Yes", "Not yet", "What does private mean here?"],
-              timeLimit: 1440 },
+              timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Scheduling?",
               question: "Did you know you can schedule a zzzap for later?",
               options: ["Yes, used it", "Where?", "I do now"],
-              timeLimit: 1440 },
+              timeLimit: 1440, openBallot: true },
 
             // FRICTION — find out what's confusing
+            // Closed by default — people are more honest about
+            // criticism when their name isn't attached.
             { category: "Friction", name: "Most confusing part",
               question: "What's the most confusing part of Zzzap right now?",
               options: ["The invite gate", "Creating a Storm", "Voting", "Nothing really"],
-              timeLimit: 2880 },
+              timeLimit: 2880, openBallot: false },
             { category: "Friction", name: "Where you get stuck",
               question: "Where do you get stuck most often in Zzzap?",
               options: ["Picking recipients", "Writing options", "Understanding results", "I don't"],
-              timeLimit: 2880 },
+              timeLimit: 2880, openBallot: false },
             { category: "Friction", name: "What's missing? (Storm)",
               type: "storm",
               question: "What feature is missing that would make Zzzap great for you?",
               stormCharLimit: 50,
-              timeLimit: 4320 },
+              timeLimit: 4320, openBallot: false },
 
             // PRIORITIZATION — let testers shape Power
             { category: "Prioritization", name: "Most-wanted Power feature",
               question: "Which Power feature would you actually pay for?",
               options: ["Photo zzzaps", "Private zzzaps", "Open ballots", "Bigger groups"],
-              timeLimit: 2880 },
+              timeLimit: 2880, openBallot: true },
             { category: "Prioritization", name: "Invite cap?",
               question: "Is 15 recipients per zzzap enough for your decisions?",
               options: ["Plenty", "Sometimes I need more", "Need way more"],
-              timeLimit: 2880 },
+              timeLimit: 2880, openBallot: true },
             { category: "Prioritization", name: "Dream feature (Storm)",
               type: "storm",
               question: "If you could add ONE feature to Zzzap tomorrow, what would it be?",
               stormCharLimit: 50,
-              timeLimit: 4320 },
+              timeLimit: 4320, openBallot: true },
 
             // QUICK — pure activity-driver
             { category: "Quick", name: "Friday plans?",
               question: "What are you doing this Friday night?",
               options: ["Going out", "Staying in", "Working", "No plans yet"],
-              timeLimit: 1440 },
+              timeLimit: 1440, openBallot: true },
         ];
 
         const templatesList = document.getElementById("templates-list");
@@ -647,6 +664,9 @@
             // Question + time limit always apply
             document.getElementById("question").value = t.question;
             document.getElementById("time-limit").value = String(t.timeLimit);
+            // Open ballot — template can set explicitly; defaults to ON
+            // for follow-up capability.
+            document.getElementById("open-ballot").checked = t.openBallot !== false;
             if (isStorm) {
                 if (t.stormCharLimit) {
                     document.getElementById("storm-char-limit").value = String(t.stormCharLimit);
