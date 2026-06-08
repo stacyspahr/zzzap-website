@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Zzzap Admin Console</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Admin-specific overrides on top of the marketing site palette */
+        body { padding-bottom: 64px; }
+        .admin-container { max-width: 720px; margin: 0 auto; padding: 40px 24px; }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #222;
+        }
+        .admin-title { font-size: 20px; font-weight: 700; color: #f5c518; }
+        .admin-title .bolt { margin-right: 4px; }
+
+        .admin-identity { font-size: 13px; color: #999; }
+        .admin-identity strong { color: #fff; }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: opacity 0.15s, background 0.15s;
+        }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary { background: #f5c518; color: #000; }
+        .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+
+        .btn-secondary { background: #222; color: #ccc; }
+        .btn-secondary:hover:not(:disabled) { background: #333; color: #fff; }
+
+        .btn-danger { background: transparent; color: #ff453a; padding: 6px 12px; font-size: 13px; }
+
+        .card {
+            background: #111;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #fff; }
+
+        .form-row { margin-bottom: 16px; }
+        .form-row label {
+            display: block;
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .form-row input[type="text"],
+        .form-row select,
+        .form-row textarea {
+            width: 100%;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 15px;
+        }
+        .form-row input[type="text"]:focus,
+        .form-row select:focus,
+        .form-row textarea:focus {
+            outline: none;
+            border-color: #f5c518;
+        }
+        .form-row textarea { resize: vertical; min-height: 60px; }
+
+        .option-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .option-row input { flex: 1; }
+        .option-row .remove-option {
+            background: transparent;
+            color: #666;
+            padding: 0 12px;
+            font-size: 18px;
+        }
+        .option-row .remove-option:hover { color: #ff453a; }
+
+        .add-option {
+            background: transparent;
+            color: #f5c518;
+            padding: 6px 0;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .add-option:hover { text-decoration: underline; }
+
+        .send-row {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #222;
+        }
+        .send-row .btn-primary { width: 100%; padding: 14px; font-size: 15px; }
+
+        .status-message {
+            margin-top: 12px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .status-message.success { color: #34c759; }
+        .status-message.error { color: #ff453a; }
+
+        .recent-zzzap {
+            padding: 16px;
+            border-radius: 12px;
+            background: #1a1a1a;
+            margin-bottom: 12px;
+        }
+        .recent-zzzap:last-child { margin-bottom: 0; }
+        .recent-zzzap .question {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .recent-zzzap .meta {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 12px;
+        }
+        .recent-zzzap .status-active { color: #34c759; font-weight: 600; }
+        .recent-zzzap .status-closed { color: #999; font-weight: 600; }
+
+        .signin-card {
+            text-align: center;
+            padding: 48px 24px;
+        }
+        .signin-card h1 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+        .signin-card p {
+            font-size: 15px;
+            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+
+        <!-- Pre-auth state -->
+        <div id="signin-view" class="card signin-card">
+            <h1>⚡⚡ Zzzap Admin Console</h1>
+            <p>Sign in to send zzzaps as Zzzap Official.</p>
+            <button id="signin-btn" class="btn-primary">Sign in with Google</button>
+            <div id="signin-error" class="status-message error"></div>
+        </div>
+
+        <!-- Authed state -->
+        <div id="admin-view" class="hidden">
+            <div class="admin-header">
+                <div class="admin-title"><span class="bolt">⚡⚡</span>Zzzap Admin Console</div>
+                <div class="admin-identity">
+                    <strong id="user-name">—</strong>
+                    <button id="signout-btn" class="btn-danger">Sign out</button>
+                </div>
+            </div>
+
+            <!-- Compose card -->
+            <div class="card">
+                <h2>Send a zzzap as Zzzap Official</h2>
+                <form id="compose-form">
+                    <div class="form-row">
+                        <label for="question">Question</label>
+                        <textarea id="question" placeholder="e.g. Have you tried sending a Storm yet?" required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Options</label>
+                        <div id="options-container">
+                            <div class="option-row">
+                                <input type="text" placeholder="Option 1" class="option-input" required>
+                                <button type="button" class="remove-option" title="Remove">×</button>
+                            </div>
+                            <div class="option-row">
+                                <input type="text" placeholder="Option 2" class="option-input" required>
+                                <button type="button" class="remove-option" title="Remove">×</button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-option" class="add-option">+ Add option</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="time-limit">Time limit</label>
+                        <select id="time-limit">
+                            <option value="60">1 hour</option>
+                            <option value="240">4 hours</option>
+                            <option value="1440" selected>24 hours</option>
+                            <option value="2880">2 days</option>
+                            <option value="10080">1 week</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="recipients">Recipients</label>
+                        <select id="recipients">
+                            <option value="all" selected>All testers (everyone who follows Zzzap Official)</option>
+                            <option value="custom">Specific UIDs (comma-separated)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row hidden" id="custom-uids-row">
+                        <label for="custom-uids">Tester UIDs</label>
+                        <textarea id="custom-uids" placeholder="uid1, uid2, uid3"></textarea>
+                    </div>
+
+                    <div class="send-row">
+                        <button type="submit" id="send-btn" class="btn-primary">Send as Zzzap Official</button>
+                        <div id="compose-status" class="status-message"></div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recent zzzaps card -->
+            <div class="card">
+                <h2>Recent zzzaps</h2>
+                <div id="recent-list">
+                    <p style="color:#666; font-size:13px;">Loading…</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--
+        SETUP NOTES (read once, then delete this comment if you want):
+
+        1. FIREBASE WEB APP CONFIG
+           Go to Firebase Console → spahrzap project → Project Settings → "Your apps"
+           If no "Web app" entry exists, click "Add app" → web icon (</>)
+              Nickname: "Zzzap Admin Console"
+              Skip Firebase Hosting (we use GitHub Pages)
+           Copy the firebaseConfig object that appears, paste it into the
+           `firebaseConfig` constant below.
+
+        2. ENABLE GOOGLE SIGN-IN (one-time)
+           Firebase Console → Authentication → Sign-in method →
+           Enable "Google" provider → Save.
+
+        3. ADD AUTHORIZED DOMAIN (one-time)
+           Firebase Console → Authentication → Settings → Authorized domains →
+           Add `zzzap-app.com`. (`localhost` is already there for local testing.)
+
+        4. SHARE YOUR ADMIN UID WITH ZAK
+           After your first successful sign-in, check the browser console — your
+           UID is printed. Send it to Zak so he can add it to the `admins`
+           allowlist in his Cloud Function.
+    -->
+
+    <script type="module">
+        // Firebase Web SDK v10 (modular, ESM via CDN)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+        import {
+            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+        import {
+            getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp
+        } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+        import {
+            getFunctions, httpsCallable
+        } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
+
+        // ───────────────────────────────────────────────────────────────
+        // PASTE YOUR FIREBASE WEB CONFIG HERE (see SETUP NOTES above)
+        // ───────────────────────────────────────────────────────────────
+        const firebaseConfig = {
+            apiKey: "REPLACE_ME",
+            authDomain: "spahrzap.firebaseapp.com",
+            projectId: "spahrzap",
+            storageBucket: "spahrzap.appspot.com",
+            messagingSenderId: "838021448718",
+            appId: "REPLACE_ME"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
+
+        // ───────────────────────────────────────────────────────────────
+        // Auth flow
+        // ───────────────────────────────────────────────────────────────
+        const signinView = document.getElementById("signin-view");
+        const adminView = document.getElementById("admin-view");
+        const signinBtn = document.getElementById("signin-btn");
+        const signinError = document.getElementById("signin-error");
+        const signoutBtn = document.getElementById("signout-btn");
+        const userName = document.getElementById("user-name");
+
+        signinBtn.addEventListener("click", async () => {
+            signinError.textContent = "";
+            try {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                signinError.textContent = err.message;
+            }
+        });
+
+        signoutBtn.addEventListener("click", () => signOut(auth));
+
+        let recentUnsub = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                signinView.classList.add("hidden");
+                adminView.classList.remove("hidden");
+                userName.textContent = user.displayName || user.email || "Admin";
+                console.log("[ADMIN] signed in as", user.uid, "— send this UID to Zak for the allowlist");
+                startRecentListener();
+            } else {
+                signinView.classList.remove("hidden");
+                adminView.classList.add("hidden");
+                if (recentUnsub) { recentUnsub(); recentUnsub = null; }
+            }
+        });
+
+        // ───────────────────────────────────────────────────────────────
+        // Compose form
+        // ───────────────────────────────────────────────────────────────
+        const optionsContainer = document.getElementById("options-container");
+        const addOptionBtn = document.getElementById("add-option");
+        const recipientsSel = document.getElementById("recipients");
+        const customUidsRow = document.getElementById("custom-uids-row");
+        const composeForm = document.getElementById("compose-form");
+        const sendBtn = document.getElementById("send-btn");
+        const composeStatus = document.getElementById("compose-status");
+
+        addOptionBtn.addEventListener("click", () => {
+            const idx = optionsContainer.children.length + 1;
+            const row = document.createElement("div");
+            row.className = "option-row";
+            row.innerHTML = `
+                <input type="text" placeholder="Option ${idx}" class="option-input" required>
+                <button type="button" class="remove-option" title="Remove">×</button>
+            `;
+            optionsContainer.appendChild(row);
+        });
+
+        optionsContainer.addEventListener("click", (e) => {
+            if (e.target.classList.contains("remove-option")) {
+                // Don't allow fewer than 2 options
+                if (optionsContainer.children.length > 2) {
+                    e.target.parentElement.remove();
+                }
+            }
+        });
+
+        recipientsSel.addEventListener("change", () => {
+            customUidsRow.classList.toggle("hidden", recipientsSel.value !== "custom");
+        });
+
+        composeForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            composeStatus.textContent = "";
+            composeStatus.className = "status-message";
+            sendBtn.disabled = true;
+            sendBtn.textContent = "Sending…";
+
+            try {
+                const question = document.getElementById("question").value.trim();
+                const options = [...document.querySelectorAll(".option-input")]
+                    .map(i => i.value.trim())
+                    .filter(v => v.length > 0);
+                const timeLimit = parseInt(document.getElementById("time-limit").value, 10);
+                const mode = recipientsSel.value;
+                const customUidsRaw = document.getElementById("custom-uids").value;
+                const recipients = mode === "custom"
+                    ? customUidsRaw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean)
+                    : []; // empty array = "all" — Cloud Function expands to all followers
+
+                const composeFn = httpsCallable(functions, "composeBrandPoll");
+                const result = await composeFn({ question, options, timeLimit, recipients, mode });
+
+                composeStatus.textContent = `Sent! Poll ID: ${result.data.pollId}`;
+                composeStatus.classList.add("success");
+                composeForm.reset();
+                // Restore 2 default option rows
+                optionsContainer.innerHTML = `
+                    <div class="option-row">
+                        <input type="text" placeholder="Option 1" class="option-input" required>
+                        <button type="button" class="remove-option" title="Remove">×</button>
+                    </div>
+                    <div class="option-row">
+                        <input type="text" placeholder="Option 2" class="option-input" required>
+                        <button type="button" class="remove-option" title="Remove">×</button>
+                    </div>
+                `;
+            } catch (err) {
+                composeStatus.textContent = `Error: ${err.message}`;
+                composeStatus.classList.add("error");
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = "Send as Zzzap Official";
+            }
+        });
+
+        // ───────────────────────────────────────────────────────────────
+        // Recent zzzaps (live listener)
+        // ───────────────────────────────────────────────────────────────
+        const recentList = document.getElementById("recent-list");
+
+        function startRecentListener() {
+            const q = query(
+                collection(db, "polls"),
+                where("creatorId", "==", "zzzap_official"),
+                orderBy("createdAt", "desc"),
+                limit(20)
+            );
+            recentUnsub = onSnapshot(q,
+                (snap) => {
+                    if (snap.empty) {
+                        recentList.innerHTML = `<p style="color:#666; font-size:13px;">No zzzaps from Zzzap Official yet.</p>`;
+                        return;
+                    }
+                    recentList.innerHTML = snap.docs.map(d => renderRecent(d.id, d.data())).join("");
+                },
+                (err) => {
+                    recentList.innerHTML = `<p style="color:#ff453a; font-size:13px;">Couldn't load: ${err.message}<br><small>(Make sure Zak added your UID to the admins allowlist + the Firestore rule that lets admins read brand polls.)</small></p>`;
+                }
+            );
+        }
+
+        function renderRecent(id, data) {
+            const recipients = data.recipients || [];
+            const voters = data.voters ? Object.keys(data.voters).length : 0;
+            const total = recipients.length;
+            const expiresAt = data.expiresAt?.toDate?.() || data.expiresAt;
+            const now = new Date();
+            const isActive = expiresAt && expiresAt > now;
+            const statusLabel = isActive ? "ACTIVE" : "CLOSED";
+            const statusClass = isActive ? "status-active" : "status-closed";
+            const createdAt = data.createdAt?.toDate?.() || data.createdAt;
+            const ago = createdAt ? timeAgo(createdAt) : "—";
+            return `
+                <div class="recent-zzzap">
+                    <div class="question">${escapeHtml(data.question || "(no question)")}</div>
+                    <div class="meta">
+                        <span class="${statusClass}">${statusLabel}</span>
+                        <span>${voters} of ${total} voted</span>
+                        <span>Sent ${ago}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function timeAgo(date) {
+            const diffMs = Date.now() - date.getTime();
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return "just now";
+            if (mins < 60) return `${mins}m ago`;
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return `${hrs}h ago`;
+            const days = Math.floor(hrs / 24);
+            return `${days}d ago`;
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        }
+    </script>
+</body>
+</html>
