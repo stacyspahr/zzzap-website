@@ -330,11 +330,30 @@
                         </label>
                     </div>
 
+                    <div class="form-row" style="display: flex; align-items: flex-start; gap: 10px;">
+                        <input type="checkbox" id="schedule-toggle" style="margin-top: 4px; accent-color: #f5c518;">
+                        <label for="schedule-toggle" style="margin-bottom: 0; cursor: pointer; flex: 1;">
+                            <strong style="color: #fff; font-size: 14px;">Schedule for later</strong> <span style="color:#666; font-size:11px;">(adds to the queue)</span>
+                        </label>
+                    </div>
+                    <div class="form-row hidden" id="schedule-when-row">
+                        <label for="schedule-when">Send at</label>
+                        <input type="datetime-local" id="schedule-when">
+                    </div>
+
                     <div class="send-row">
                         <button type="submit" id="send-btn" class="btn-primary">Send as Zzzap Official</button>
                         <div id="compose-status" class="status-message"></div>
                     </div>
                 </form>
+            </div>
+
+            <!-- Scheduled queue -->
+            <div class="card">
+                <h2>Queue</h2>
+                <div id="queue-list">
+                    <p style="color:#666; font-size:13px;">Loading…</p>
+                </div>
             </div>
 
             <!-- Recent zzzaps card -->
@@ -440,6 +459,7 @@
         signoutBtn.addEventListener("click", () => signOut(auth));
 
         let recentUnsub = null;
+        let queueUnsub = null;
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -448,10 +468,12 @@
                 userName.textContent = user.email || user.displayName || "Admin";
                 console.log("[ADMIN] signed in as", user.uid, "— send this UID to Zak for the allowlist");
                 startRecentListener();
+                startQueueListener();
             } else {
                 signinView.classList.remove("hidden");
                 adminView.classList.add("hidden");
                 if (recentUnsub) { recentUnsub(); recentUnsub = null; }
+                if (queueUnsub) { queueUnsub(); queueUnsub = null; }
             }
         });
 
@@ -507,6 +529,24 @@
         }
         pollTypeSel.addEventListener("change", applyPollType);
 
+        // Schedule toggle: reveal datetime picker + relabel the submit button
+        const scheduleToggle = document.getElementById("schedule-toggle");
+        const scheduleWhenRow = document.getElementById("schedule-when-row");
+        const scheduleWhen = document.getElementById("schedule-when");
+        function applyScheduleToggle() {
+            const on = scheduleToggle.checked;
+            scheduleWhenRow.classList.toggle("hidden", !on);
+            if (on && !scheduleWhen.value) {
+                // Default to 1 hour from now, rounded to next 15min
+                const d = new Date(Date.now() + 60 * 60 * 1000);
+                d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+                const pad = (n) => String(n).padStart(2, "0");
+                scheduleWhen.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            }
+            sendBtn.textContent = on ? "Schedule" : "Send as Zzzap Official";
+        }
+        scheduleToggle.addEventListener("change", applyScheduleToggle);
+
         composeForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             composeStatus.textContent = "";
@@ -533,9 +573,16 @@
                     : []; // empty array = "all" — Cloud Function expands to all followers
 
                 const openBallot = document.getElementById("open-ballot").checked;
+                // Scheduling: if toggled, pass an ISO timestamp; Cloud Function
+                // writes status="scheduled" + scheduledFor on the poll doc and
+                // the existing lifecycle Cloud Tasks scheduler flips it to
+                // "active" at that time (same path as iOS scheduled polls).
+                const scheduledFor = scheduleToggle.checked && scheduleWhen.value
+                    ? new Date(scheduleWhen.value).toISOString()
+                    : null;
 
                 const composeFn = httpsCallable(functions, "composeBrandPoll");
-                const result = await composeFn({ pollType, question, options, timeLimit, stormCharLimit, openBallot, recipients, mode });
+                const result = await composeFn({ pollType, question, options, timeLimit, stormCharLimit, openBallot, scheduledFor, recipients, mode });
 
                 composeStatus.textContent = `Sent! Poll ID: ${result.data.pollId}`;
                 composeStatus.classList.add("success");
@@ -781,6 +828,52 @@
             if (hrs < 24) return `${hrs}h ago`;
             const days = Math.floor(hrs / 24);
             return `${days}d ago`;
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Queue (scheduled brand zzzaps)
+        // ───────────────────────────────────────────────────────────────
+        const queueList = document.getElementById("queue-list");
+
+        function startQueueListener() {
+            const q = query(
+                collection(db, "polls"),
+                where("creatorId", "==", "zzzap_official"),
+                where("status", "==", "scheduled"),
+                orderBy("scheduledFor", "asc"),
+                limit(30)
+            );
+            queueUnsub = onSnapshot(q,
+                (snap) => {
+                    if (snap.empty) {
+                        queueList.innerHTML = `<p style="color:#666; font-size:13px;">Queue is empty. Schedule a few coaching zzzaps so the cadence keeps rolling.</p>`;
+                        return;
+                    }
+                    queueList.innerHTML = snap.docs.map(d => renderQueued(d.id, d.data())).join("");
+                },
+                (err) => {
+                    queueList.innerHTML = `<p style="color:#ff453a; font-size:13px;">Couldn't load queue: ${err.message}<br><small>(May need a composite index — Firebase will print a link to create it in the browser console on first read.)</small></p>`;
+                    console.error(err);
+                }
+            );
+        }
+
+        function renderQueued(id, data) {
+            const scheduledFor = data.scheduledFor?.toDate?.() || data.scheduledFor;
+            const when = scheduledFor ? formatAbsolute(scheduledFor) : "—";
+            const isStorm = (data.pollType || "").toLowerCase() === "storm";
+            const typeBadge = isStorm
+                ? `<span style="font-size:10px; font-weight:700; color:#000; background:#f5c518; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">STORM</span>`
+                : "";
+            return `
+                <div class="recent-zzzap" style="border-left: 3px solid #f5c518; padding-left: 13px;">
+                    <div class="question">${typeBadge} ${escapeHtml(data.question || "(no question)")}</div>
+                    <div class="meta">
+                        <span style="color:#f5c518; font-weight:600;">SCHEDULED</span>
+                        <span>${when}</span>
+                    </div>
+                </div>
+            `;
         }
 
         // Compact local-time absolute format. Today/yesterday get a label
