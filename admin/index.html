@@ -259,8 +259,6 @@
             color: #ccc;
         }
         .voter-chip button {
-            background: #f5c518;
-            color: #000;
             border-radius: 999px;
             padding: 3px 8px;
             font-size: 11px;
@@ -268,7 +266,22 @@
             border: none;
             cursor: pointer;
         }
-        .voter-chip button:hover { background: #ffd633; }
+        .voter-chip .chip-primary {
+            background: #f5c518;
+            color: #000;
+        }
+        .voter-chip .chip-primary:hover { background: #ffd633; }
+        .voter-chip .chip-secondary {
+            background: transparent;
+            color: #999;
+            padding: 3px 6px;
+        }
+        .voter-chip .chip-secondary:hover { color: #f5c518; }
+        .voter-check {
+            color: #34c759;
+            font-weight: 700;
+            margin-right: 4px;
+        }
         .non-voters {
             margin-top: 16px;
             padding-top: 12px;
@@ -717,27 +730,30 @@
             // "now" is allowed.
 
             // AWARENESS — find out who knows about each feature.
-            { category: "Awareness", name: "Tried a Storm?",
+            // featureTag links the broadcast template to its matching teach
+            // template below, so the per-voter Teach button on a Recent row
+            // knows which teaching zzzap to pre-fill.
+            { category: "Awareness", name: "Tried a Storm?", featureTag: "storm",
               question: "Have you sent a Storm yet? It's the write-in version. No preset options.",
               options: ["Yes, used it", "Not yet. Trying one now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
-            { category: "Awareness", name: "Lock-screen voting?",
+            { category: "Awareness", name: "Lock-screen voting?", featureTag: "lock_screen",
               question: "Have you voted on a zzzap from the lock screen yet? Long-press the notification to see options.",
               options: ["Yes, love it", "Not yet. Trying it next time.", "Tried, didn't work"],
               timeLimit: 1440, openBallot: true },
-            { category: "Awareness", name: "Smart Groups?",
+            { category: "Awareness", name: "Smart Groups?", featureTag: "smart_groups",
               question: "Have you used Smart Groups yet? Close Friends, Family, and a few others.",
               options: ["Yes, use them", "Not yet. Setting one up now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
-            { category: "Awareness", name: "Private zzzaps?",
+            { category: "Awareness", name: "Private zzzaps?", featureTag: "private",
               question: "Have you sent a private zzzap? Results vanish 30 seconds after viewing.",
               options: ["Yes, sent one", "Not yet. Sending one now.", "What does private mean?"],
               timeLimit: 1440, openBallot: true },
-            { category: "Awareness", name: "Scheduling?",
+            { category: "Awareness", name: "Scheduling?", featureTag: "scheduling",
               question: "Have you scheduled a zzzap to send later?",
               options: ["Yes, used it", "Not yet. Trying it now.", "Show me where"],
               timeLimit: 1440, openBallot: true },
-            { category: "Awareness", name: "Pin a zzzap?",
+            { category: "Awareness", name: "Pin a zzzap?", featureTag: "pin",
               question: "Have you pinned a zzzap to the top of your feed? Long-press the row.",
               options: ["Yes, use it", "Not yet. Trying it now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
@@ -779,6 +795,68 @@
               options: ["Going out", "Staying in", "Working", "No plans yet"],
               timeLimit: 1440, openBallot: true },
         ];
+
+        // Teach templates: explanation-first 1-on-1 zzzaps used by the per-voter
+        // Teach button on each Recent row's expanded view. Keyed by featureTag,
+        // so when a Recent row's parent broadcast template carries a matching
+        // featureTag we know which teach zzzap to pre-fill.
+        //
+        // Structure mirrors broadcast templates (question + options) but
+        // inverts the voice: question text carries the explanation, options
+        // are the implementation-intention + escalation trio. The "Still
+        // not clear" option is the trip-wire that tells Stacy to text the
+        // tester directly (Tier 3 in the coaching playbook).
+        const teachTemplates = {
+            storm: {
+                name: "Teach: Storm",
+                question: "A Storm lets voters write in their own answers. No preset options, just a question and a place to brainstorm. Try one?",
+                options: ["Sending one now.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 1440, openBallot: true
+            },
+            lock_screen: {
+                name: "Teach: Lock-screen voting",
+                question: "You can vote on a zzzap without unlocking your phone. Long-press the notification, options appear, tap one. Try it next time you get a zzzap?",
+                options: ["Trying it next time.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 1440, openBallot: true
+            },
+            smart_groups: {
+                name: "Teach: Smart Groups",
+                question: "Smart Groups are pre-built recipient lists. Close Friends, Family, Mutuals. Pick one when sending instead of selecting people one by one. Try one?",
+                options: ["Setting one up now.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 1440, openBallot: true
+            },
+            private: {
+                name: "Teach: Private zzzaps",
+                question: "Private zzzaps auto-destroy 30 seconds after viewing. Perfect for personal stuff. Try one now?",
+                options: ["Sending one now.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 1440, openBallot: true
+            },
+            scheduling: {
+                name: "Teach: Scheduling",
+                question: "You can schedule a zzzap to send later. Useful for asking around dinner without setting a reminder. Try it?",
+                options: ["Trying it now.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 1440, openBallot: true
+            },
+            pin: {
+                name: "Teach: Pinning",
+                question: "Pin a zzzap to the top of your feed by long-pressing the row. Stays put until you unpin. Try it on any active zzzap?",
+                options: ["Trying it now.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 1440, openBallot: true
+            }
+        };
+
+        // Match a parent zzzap to a featureTag by comparing its question text
+        // against the broadcast templates. Brittle to manual edits — falls
+        // through to null if no match (chip then shows a blank Follow-up).
+        function inferFeatureTag(parentQuestion) {
+            const q = (parentQuestion || "").trim().toLowerCase();
+            if (!q) return null;
+            for (const t of templates) {
+                if (!t.featureTag) continue;
+                if (t.question.trim().toLowerCase() === q) return t.featureTag;
+            }
+            return null;
+        }
 
         const templatesList = document.getElementById("templates-list");
 
@@ -840,6 +918,11 @@
         // ───────────────────────────────────────────────────────────────
         const recentList = document.getElementById("recent-list");
 
+        // Most recent Zzzap Official zzzaps, lifted to module scope so the
+        // expanded-row detail renderer can use them to detect 1-on-1
+        // follow-ups without firing a second Firestore query.
+        let recentDocs = [];
+
         function startRecentListener() {
             const q = query(
                 collection(db, "polls"),
@@ -850,12 +933,13 @@
             recentUnsub = onSnapshot(q,
                 (snap) => {
                     if (snap.empty) {
+                        recentDocs = [];
                         recentList.innerHTML = `<p style="color:#666; font-size:13px;">No zzzaps from Zzzap Official yet.</p>`;
                         return;
                     }
-                    const docs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
-                    const paceLine = renderPace(docs);
-                    const rows = docs.map(d => renderRecent(d.id, d.data)).join("");
+                    recentDocs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+                    const paceLine = renderPace(recentDocs);
+                    const rows = recentDocs.map(d => renderRecent(d.id, d.data)).join("");
                     recentList.innerHTML = paceLine + rows;
                 },
                 (err) => {
@@ -925,12 +1009,19 @@
         // Click a Recent row → expand inline with vote details. Delegated
         // listener so it survives the row re-renders that onSnapshot triggers.
         recentList.addEventListener("click", async (e) => {
-            // Follow-up chip button → pre-fill compose, stop bubbling so
-            // the row doesn't also toggle expand/collapse on the same click
-            const followUpBtn = e.target.closest(".voter-chip button");
-            if (followUpBtn) {
+            // Chip action button → pre-fill compose, stop bubbling so the
+            // row doesn't also toggle expand/collapse on the same click
+            const chipBtn = e.target.closest(".voter-chip button");
+            if (chipBtn) {
                 e.stopPropagation();
-                prefillFollowUp(followUpBtn.dataset.uid);
+                const uid = chipBtn.dataset.uid;
+                const action = chipBtn.dataset.action;
+                if (action === "teach") {
+                    const tag = chipBtn.dataset.tag;
+                    sendTeach(uid, tag);
+                } else {
+                    prefillFollowUp(uid);
+                }
                 return;
             }
             const row = e.target.closest(".recent-zzzap.expandable");
@@ -970,13 +1061,32 @@
             const uidsToFetch = new Set([...recipients, ...Object.keys(voters)]);
             await loadNames([...uidsToFetch]);
 
-            if (pollType === "storm") {
-                return await renderStormDetails(pollId, poll, recipients, voters);
+            // Per-voter context used by chip rendering:
+            //   featureTag → drives the Teach button content (null = blank Follow up)
+            //   followedUpUids → uids already coached 1-on-1 after this parent;
+            //     marked with a green check on their chip.
+            const parentCreatedAt = poll.createdAt?.toDate?.() || poll.createdAt || new Date(0);
+            const followedUpUids = new Set();
+            for (const d of recentDocs) {
+                const otherRecipients = d.data.recipients || [];
+                if (otherRecipients.length !== 1) continue; // only single-recipient counts as a 1-on-1 follow-up
+                const t = d.data.createdAt?.toDate?.() || d.data.createdAt;
+                if (!t || t <= parentCreatedAt) continue;
+                if (d.id === pollId) continue; // don't count the parent against itself
+                followedUpUids.add(otherRecipients[0]);
             }
-            return renderStrikeDetails(poll, recipients, voters);
+            const ctx = {
+                featureTag: inferFeatureTag(poll.question),
+                followedUpUids
+            };
+
+            if (pollType === "storm") {
+                return await renderStormDetails(pollId, poll, recipients, voters, ctx);
+            }
+            return renderStrikeDetails(poll, recipients, voters, ctx);
         }
 
-        function renderStrikeDetails(poll, recipients, voters) {
+        function renderStrikeDetails(poll, recipients, voters, ctx) {
             const options = poll.options || [];
             // Bucket voters by the option they picked
             const byOption = options.map(() => []);
@@ -996,14 +1106,14 @@
                             <span class="option-result-count">${count} · ${pct}%</span>
                         </div>
                         <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
-                        ${renderVoterChips(byOption[i])}
+                        ${renderVoterChips(byOption[i], ctx)}
                     </div>
                 `;
             }).join("");
-            return optionBlocks + renderNonVoters(recipients, voters);
+            return optionBlocks + renderNonVoters(recipients, voters, ctx);
         }
 
-        async function renderStormDetails(pollId, poll, recipients, voters) {
+        async function renderStormDetails(pollId, poll, recipients, voters, ctx) {
             // Storm answers live in a subcollection. Each doc has text +
             // voterIds (everyone who picked it, which includes the original
             // author). Sort by votes desc, hide merged answers — they
@@ -1022,7 +1132,7 @@
             const totalVotes = answers.reduce((sum, a) => sum + (a.voterIds?.length || 0), 0);
             if (answers.length === 0) {
                 return `<div style="color:#666; font-size:12px; padding:8px 0;">No write-in answers yet.</div>`
-                    + renderNonVoters(recipients, voters);
+                    + renderNonVoters(recipients, voters, ctx);
             }
             const blocks = answers.map(a => {
                 const count = a.voterIds?.length || 0;
@@ -1037,32 +1147,46 @@
                             <span class="option-result-count">${count} · ${pct}%</span>
                         </div>
                         <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
-                        ${renderVoterChips(a.voterIds || [])}
+                        ${renderVoterChips(a.voterIds || [], ctx)}
                     </div>
                 `;
             }).join("");
-            return blocks + renderNonVoters(recipients, voters);
+            return blocks + renderNonVoters(recipients, voters, ctx);
         }
 
-        function renderVoterChips(uids) {
+        function renderVoterChips(uids, ctx) {
             if (uids.length === 0) return "";
+            const teach = ctx?.featureTag ? teachTemplates[ctx.featureTag] : null;
+            const followedUp = ctx?.followedUpUids || new Set();
             const chips = uids.map(uid => {
                 const name = userNameCache.get(uid) || `${uid.slice(0, 6)}…`;
-                // Only UID goes in the onclick attribute — name is looked
-                // up from the cache inside the handler. Keeps the HTML
+                // Only UID goes in data-* attributes — name is looked up
+                // from the cache inside the click handler. Keeps the HTML
                 // attribute free of arbitrary text that could break quoting.
-                return `<span class="voter-chip">${escapeHtml(name)} <button data-uid="${escapeHtml(uid)}">Follow up</button></span>`;
+                const check = followedUp.has(uid)
+                    ? `<span class="voter-check" title="Already followed up with this person">✓</span>`
+                    : "";
+                // Primary button: Teach if we know the feature, else blank
+                // Follow-up. When a teach template exists, also offer Custom
+                // as an escape hatch for blank-prefill.
+                const primary = teach
+                    ? `<button data-uid="${escapeHtml(uid)}" data-action="teach" data-tag="${escapeHtml(ctx.featureTag)}" class="chip-primary">Teach</button>`
+                    : `<button data-uid="${escapeHtml(uid)}" data-action="custom" class="chip-primary">Follow up</button>`;
+                const custom = teach
+                    ? `<button data-uid="${escapeHtml(uid)}" data-action="custom" class="chip-secondary">Custom</button>`
+                    : "";
+                return `<span class="voter-chip">${check}${escapeHtml(name)} ${primary}${custom}</span>`;
             }).join("");
             return `<div class="voter-chips">${chips}</div>`;
         }
 
-        function renderNonVoters(recipients, voters) {
+        function renderNonVoters(recipients, voters, ctx) {
             const nonVoters = recipients.filter(uid => !(uid in voters));
             if (nonVoters.length === 0) return "";
             return `
                 <div class="non-voters">
                     <div class="non-voters-title">Hasn't voted yet (${nonVoters.length})</div>
-                    ${renderVoterChips(nonVoters)}
+                    ${renderVoterChips(nonVoters, ctx)}
                 </div>
             `;
         }
@@ -1088,17 +1212,49 @@
             }
         }
 
-        // Pre-fill the compose form with exactly one recipient. Scrolls to
-        // the form and focuses the question field so the admin can start
-        // typing immediately. Name is just for the log line.
+        // Pre-fill the compose form with exactly one recipient (blank
+        // question/options). Used for ad-hoc Custom follow-ups where the
+        // admin wants to write their own teaching from scratch.
         function prefillFollowUp(uid) {
             const name = userNameCache.get(uid) || uid;
-            recipientsSel.value = "custom";
-            customUidsRow.classList.remove("hidden");
-            document.getElementById("custom-uids").value = uid;
+            lockRecipientToUid(uid);
             document.getElementById("question").focus();
             document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
             console.log("[ADMIN] follow-up pre-filled for", name, uid);
+        }
+
+        // One-click teach: pre-fill the matching teach template AND lock
+        // the recipient to a single voter. The form ends fully populated;
+        // the admin just clicks Send Now.
+        function sendTeach(uid, featureTag) {
+            const teach = teachTemplates[featureTag];
+            if (!teach) {
+                console.warn("[ADMIN] no teach template for", featureTag, "— falling back to blank Follow up");
+                prefillFollowUp(uid);
+                return;
+            }
+            const name = userNameCache.get(uid) || uid;
+            // Strike type — all teach templates are Strikes today
+            pollTypeSel.value = "strike";
+            applyPollType();
+            document.getElementById("question").value = teach.question;
+            document.getElementById("time-limit").value = String(teach.timeLimit);
+            document.getElementById("open-ballot").checked = teach.openBallot !== false;
+            optionsContainer.innerHTML = teach.options.map((opt, i) => `
+                <div class="option-row">
+                    <input type="text" placeholder="Option ${i + 1}" class="option-input" value="${escapeHtml(opt)}" required>
+                    <button type="button" class="remove-option" title="Remove">×</button>
+                </div>
+            `).join("");
+            lockRecipientToUid(uid);
+            document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
+            console.log("[ADMIN] teach", featureTag, "pre-filled for", name, uid);
+        }
+
+        function lockRecipientToUid(uid) {
+            recipientsSel.value = "custom";
+            customUidsRow.classList.remove("hidden");
+            document.getElementById("custom-uids").value = uid;
         }
 
         function timeAgo(date) {
