@@ -195,6 +195,97 @@
         .recent-zzzap .status-active { color: #34c759; font-weight: 600; }
         .recent-zzzap .status-closed { color: #999; font-weight: 600; }
 
+        /* Expandable details — vote breakdown + voter list */
+        .recent-zzzap.expandable { cursor: pointer; transition: background 120ms; }
+        .recent-zzzap.expandable:hover { background: #1f1f1f; }
+        .recent-zzzap .expand-hint {
+            color: #666;
+            font-size: 11px;
+            margin-left: auto;
+            user-select: none;
+        }
+        .recent-zzzap.expanded .expand-hint { color: #f5c518; }
+        .details {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #222;
+        }
+        .details-loading {
+            color: #666;
+            font-size: 12px;
+            padding: 8px 0;
+        }
+        .option-result {
+            margin-bottom: 14px;
+        }
+        .option-result:last-child { margin-bottom: 0; }
+        .option-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+            font-size: 13px;
+            gap: 12px;
+        }
+        .option-result-text { color: #fff; font-weight: 500; flex: 1; }
+        .option-result-count { color: #999; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .option-result-bar {
+            height: 6px;
+            background: #1f1f1f;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .option-result-bar-fill {
+            height: 100%;
+            background: #f5c518;
+            border-radius: 3px;
+            transition: width 200ms ease-out;
+        }
+        .voter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .voter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #1f1f1f;
+            border-radius: 999px;
+            padding: 4px 4px 4px 10px;
+            font-size: 12px;
+            color: #ccc;
+        }
+        .voter-chip button {
+            background: #f5c518;
+            color: #000;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+        .voter-chip button:hover { background: #ffd633; }
+        .non-voters {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px dashed #222;
+        }
+        .non-voters-title {
+            color: #999;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .details-error {
+            color: #ff453a;
+            font-size: 12px;
+            padding: 6px 0;
+        }
+
         .signin-card {
             text-align: center;
             padding: 48px 24px;
@@ -400,7 +491,8 @@
             getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
-            getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp
+            getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp,
+            getDocs, doc, documentId
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
         import {
             getFunctions, httpsCallable
@@ -474,6 +566,7 @@
                 adminView.classList.add("hidden");
                 if (recentUnsub) { recentUnsub(); recentUnsub = null; }
                 if (queueUnsub) { queueUnsub(); queueUnsub = null; }
+                userNameCache.clear();
             }
         });
 
@@ -808,16 +901,204 @@
                 ? `<span style="font-size:10px; font-weight:700; color:#000; background:#f5c518; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">STORM</span>`
                 : "";
             return `
-                <div class="recent-zzzap">
+                <div class="recent-zzzap expandable" data-poll-id="${id}" data-poll-type="${isStorm ? "storm" : "strike"}">
                     <div class="question">${typeBadge} ${escapeHtml(data.question || "(no question)")}</div>
                     <div class="meta">
                         <span class="${statusClass}">${statusLabel}</span>
                         <span>${voters} of ${total} voted</span>
                         <span title="${absolute}">${ago}</span>
+                        <span class="expand-hint">click to expand ›</span>
                     </div>
                     <div style="margin-top:4px; color:#555; font-size:11px;">${absolute}</div>
                 </div>
             `;
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Vote details — expanded view inside each Recent row
+        // ───────────────────────────────────────────────────────────────
+
+        // Cache user display names so a session that fans out across
+        // many rows doesn't refetch the same UID. Wiped on signout.
+        const userNameCache = new Map();
+
+        // Click a Recent row → expand inline with vote details. Delegated
+        // listener so it survives the row re-renders that onSnapshot triggers.
+        recentList.addEventListener("click", async (e) => {
+            // Follow-up chip button → pre-fill compose, stop bubbling so
+            // the row doesn't also toggle expand/collapse on the same click
+            const followUpBtn = e.target.closest(".voter-chip button");
+            if (followUpBtn) {
+                e.stopPropagation();
+                prefillFollowUp(followUpBtn.dataset.uid);
+                return;
+            }
+            const row = e.target.closest(".recent-zzzap.expandable");
+            if (!row) return;
+
+            const pollId = row.dataset.pollId;
+            const pollType = row.dataset.pollType;
+            const existing = row.querySelector(".details");
+            if (existing) {
+                existing.remove();
+                row.classList.remove("expanded");
+                return;
+            }
+            row.classList.add("expanded");
+            const details = document.createElement("div");
+            details.className = "details";
+            details.innerHTML = `<div class="details-loading">Loading details…</div>`;
+            row.appendChild(details);
+            try {
+                const html = await renderDetails(pollId, pollType);
+                details.innerHTML = html;
+            } catch (err) {
+                console.error("[ADMIN] details load failed", err);
+                details.innerHTML = `<div class="details-error">Couldn't load details: ${escapeHtml(err.message || String(err))}</div>`;
+            }
+        });
+
+        async function renderDetails(pollId, pollType) {
+            // Refetch the poll doc so we get a frozen snapshot for this render
+            const pollDocs = await getDocs(query(collection(db, "polls"), where(documentId(), "==", pollId)));
+            if (pollDocs.empty) return `<div class="details-error">Poll not found.</div>`;
+            const poll = pollDocs.docs[0].data();
+            const recipients = poll.recipients || [];
+            const voters = poll.voters || {};
+
+            // Lazy-fetch display names for everyone we'll show
+            const uidsToFetch = new Set([...recipients, ...Object.keys(voters)]);
+            await loadNames([...uidsToFetch]);
+
+            if (pollType === "storm") {
+                return await renderStormDetails(pollId, poll, recipients, voters);
+            }
+            return renderStrikeDetails(poll, recipients, voters);
+        }
+
+        function renderStrikeDetails(poll, recipients, voters) {
+            const options = poll.options || [];
+            // Bucket voters by the option they picked
+            const byOption = options.map(() => []);
+            for (const [uid, optionIndex] of Object.entries(voters)) {
+                if (typeof optionIndex === "number" && optionIndex >= 0 && optionIndex < options.length) {
+                    byOption[optionIndex].push(uid);
+                }
+            }
+            const totalVotes = Object.keys(voters).length;
+            const optionBlocks = options.map((text, i) => {
+                const count = byOption[i].length;
+                const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                return `
+                    <div class="option-result">
+                        <div class="option-result-header">
+                            <span class="option-result-text">${escapeHtml(text)}</span>
+                            <span class="option-result-count">${count} · ${pct}%</span>
+                        </div>
+                        <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
+                        ${renderVoterChips(byOption[i])}
+                    </div>
+                `;
+            }).join("");
+            return optionBlocks + renderNonVoters(recipients, voters);
+        }
+
+        async function renderStormDetails(pollId, poll, recipients, voters) {
+            // Storm answers live in a subcollection. Each doc has text +
+            // voterIds (everyone who picked it, which includes the original
+            // author). Sort by votes desc, hide merged answers — they
+            // collapse into their merge target.
+            const answersSnap = await getDocs(collection(db, "polls", pollId, "answers"));
+            const answers = answersSnap.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .filter(a => !a.isMerged)
+                .sort((a, b) => (b.voterIds?.length || 0) - (a.voterIds?.length || 0));
+
+            // Names for everyone we'll show as a voter on any answer
+            const extraUids = new Set();
+            answers.forEach(a => (a.voterIds || []).forEach(u => extraUids.add(u)));
+            await loadNames([...extraUids]);
+
+            const totalVotes = answers.reduce((sum, a) => sum + (a.voterIds?.length || 0), 0);
+            if (answers.length === 0) {
+                return `<div style="color:#666; font-size:12px; padding:8px 0;">No write-in answers yet.</div>`
+                    + renderNonVoters(recipients, voters);
+            }
+            const blocks = answers.map(a => {
+                const count = a.voterIds?.length || 0;
+                const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                const fullText = a.fullText && a.fullText !== a.text
+                    ? `<div style="color:#999; font-size:12px; margin-top:4px;">${escapeHtml(a.fullText)}</div>`
+                    : "";
+                return `
+                    <div class="option-result">
+                        <div class="option-result-header">
+                            <span class="option-result-text">${escapeHtml(a.text || "(empty)")}${fullText}</span>
+                            <span class="option-result-count">${count} · ${pct}%</span>
+                        </div>
+                        <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
+                        ${renderVoterChips(a.voterIds || [])}
+                    </div>
+                `;
+            }).join("");
+            return blocks + renderNonVoters(recipients, voters);
+        }
+
+        function renderVoterChips(uids) {
+            if (uids.length === 0) return "";
+            const chips = uids.map(uid => {
+                const name = userNameCache.get(uid) || `${uid.slice(0, 6)}…`;
+                // Only UID goes in the onclick attribute — name is looked
+                // up from the cache inside the handler. Keeps the HTML
+                // attribute free of arbitrary text that could break quoting.
+                return `<span class="voter-chip">${escapeHtml(name)} <button data-uid="${escapeHtml(uid)}">Follow up</button></span>`;
+            }).join("");
+            return `<div class="voter-chips">${chips}</div>`;
+        }
+
+        function renderNonVoters(recipients, voters) {
+            const nonVoters = recipients.filter(uid => !(uid in voters));
+            if (nonVoters.length === 0) return "";
+            return `
+                <div class="non-voters">
+                    <div class="non-voters-title">Hasn't voted yet (${nonVoters.length})</div>
+                    ${renderVoterChips(nonVoters)}
+                </div>
+            `;
+        }
+
+        // Batch user-doc reads (Firestore `in` caps at 30 values per query)
+        async function loadNames(uids) {
+            const missing = uids.filter(u => u && !userNameCache.has(u));
+            if (missing.length === 0) return;
+            for (let i = 0; i < missing.length; i += 30) {
+                const chunk = missing.slice(i, i + 30);
+                try {
+                    const snap = await getDocs(query(collection(db, "users"), where(documentId(), "in", chunk)));
+                    snap.forEach(d => {
+                        const data = d.data();
+                        const name = data.displayName || data.nickname || `${d.id.slice(0, 6)}…`;
+                        userNameCache.set(d.id, name);
+                    });
+                } catch (err) {
+                    console.warn("[ADMIN] couldn't read users — Zak may need to update Firestore rules", err);
+                }
+                // Anyone still missing — likely deleted users or rule blocks — gets a uid-stub
+                chunk.forEach(u => { if (!userNameCache.has(u)) userNameCache.set(u, `${u.slice(0, 6)}…`); });
+            }
+        }
+
+        // Pre-fill the compose form with exactly one recipient. Scrolls to
+        // the form and focuses the question field so the admin can start
+        // typing immediately. Name is just for the log line.
+        function prefillFollowUp(uid) {
+            const name = userNameCache.get(uid) || uid;
+            recipientsSel.value = "custom";
+            customUidsRow.classList.remove("hidden");
+            document.getElementById("custom-uids").value = uid;
+            document.getElementById("question").focus();
+            document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
+            console.log("[ADMIN] follow-up pre-filled for", name, uid);
         }
 
         function timeAgo(date) {
