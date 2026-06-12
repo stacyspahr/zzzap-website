@@ -915,6 +915,14 @@
 
         const templatesList = document.getElementById("templates-list");
 
+        // Most recent Zzzap Official zzzaps, kept in module scope so the
+        // templates sidebar (last-sent staleness) and the expanded-row
+        // detail renderer (1-on-1 follow-up detection) can both read it
+        // without firing extra Firestore queries. Populated by the Recent
+        // listener; defaults to [] before sign-in so the initial
+        // renderTemplates() call doesn't hit a TDZ error.
+        let recentDocs = [];
+
         // For each template, find the most recent Recent zzzap whose
         // question matches exactly. Drives the "Sent 3d ago" indicator
         // so the admin can pace coaching and avoid repeating themselves.
@@ -1004,11 +1012,6 @@
         // Recent zzzaps (live listener)
         // ───────────────────────────────────────────────────────────────
         const recentList = document.getElementById("recent-list");
-
-        // Most recent Zzzap Official zzzaps, lifted to module scope so the
-        // expanded-row detail renderer can use them to detect 1-on-1
-        // follow-ups without firing a second Firestore query.
-        let recentDocs = [];
 
         function startRecentListener() {
             const q = query(
