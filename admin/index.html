@@ -1380,18 +1380,38 @@
             updateRecipientsHint();
         }
 
-        // Fetches the followers array off users/zzzap_official. Cached for
-        // the session so the form submit and the live hint don't double-read.
-        // Refreshed each time we want a fresh count.
+        // Resolves the set of UIDs that follow Zzzap Official.
+        //
+        // The follow relationship is asymmetric in Firestore: each user's
+        // own `following` array is the authoritative side (written by the
+        // "add zzzap_official to all users" script). The brand account's
+        // `followers` array is a mirror that may or may not be populated
+        // depending on whether anyone backfilled it. So we query the
+        // reverse direction — every user doc whose `following` array
+        // contains zzzap_official — and use the document IDs.
+        //
+        // Falls back to reading users/zzzap_official.followers if the
+        // reverse query fails (e.g. Firestore rules don't allow that
+        // collection query). Whichever returns a non-empty list wins.
         let cachedBrandFollowers = null;
         async function fetchBrandFollowers({ force = false } = {}) {
             if (cachedBrandFollowers && !force) return cachedBrandFollowers;
-            const snap = await getDoc(doc(db, "users", "zzzap_official"));
-            if (!snap.exists()) {
-                cachedBrandFollowers = [];
-                return cachedBrandFollowers;
+            try {
+                const snap = await getDocs(query(
+                    collection(db, "users"),
+                    where("following", "array-contains", "zzzap_official")
+                ));
+                const uids = snap.docs.map(d => d.id);
+                if (uids.length > 0) {
+                    cachedBrandFollowers = uids;
+                    return cachedBrandFollowers;
+                }
+            } catch (err) {
+                console.warn("[ADMIN] reverse follower query failed, falling back to brand doc.followers", err);
             }
-            const data = snap.data();
+            // Fallback: read the mirrored array on the brand user doc
+            const brandSnap = await getDoc(doc(db, "users", "zzzap_official"));
+            const data = brandSnap.exists() ? brandSnap.data() : {};
             cachedBrandFollowers = Array.isArray(data.followers) ? data.followers : [];
             return cachedBrandFollowers;
         }
