@@ -979,16 +979,27 @@
         }
 
         function renderTemplates() {
-            templatesList.innerHTML = templates.map((t, i) => {
+            // Sort by last-sent date so the freshest candidates surface
+            // first: never-sent templates at the top, then oldest sends,
+            // then most-recently-sent at the bottom (least desirable to
+            // repeat). Original indices are preserved for the click
+            // handler's data-idx attribute.
+            const ordered = templates
+                .map((t, i) => ({ t, i, last: lastSentDateForTemplate(t) }))
+                .sort((a, b) => {
+                    const aT = a.last ? a.last.getTime() : 0;
+                    const bT = b.last ? b.last.getTime() : 0;
+                    return aT - bT;
+                });
+            templatesList.innerHTML = ordered.map(({ t, i, last }) => {
                 // Bolt iconography rule: single bolt = Strike (decisive
                 // moment), tornado = Storm (brainstorm). Matches the iOS
                 // app + the marketing site's duo cards.
                 const isStorm = t.type === "storm";
                 const icon = isStorm ? "&#127786;" : "&#9889;";
-                const lastSent = lastSentDateForTemplate(t);
-                const stale = staleness(lastSent);
-                const lastSentLine = lastSent
-                    ? `<span class="template-last-sent ${stale}">Sent ${timeAgo(lastSent)}</span>`
+                const stale = staleness(last);
+                const lastSentLine = last
+                    ? `<span class="template-last-sent ${stale}">Sent ${timeAgo(last)}</span>`
                     : "";
                 return `
                 <button type="button" class="template-btn" data-idx="${i}">
