@@ -714,17 +714,23 @@
                 const stormCharLimit = pollType === "storm"
                     ? parseInt(document.getElementById("storm-char-limit").value, 10)
                     : null;
-                const mode = recipientsSel.value;
+                const uiMode = recipientsSel.value;
                 const customUidsRaw = document.getElementById("custom-uids").value;
                 // Client-side expansion of "all testers" — the Cloud Function
                 // is supposed to do this server-side, but until ZZZ-298 ships
                 // we fetch the Zzzap Official followers array ourselves and
                 // pass the full UID list as `recipients`. Stays in place as
-                // a safety net even after the server fix lands: if the
-                // function ever drops the expansion again, the dashboard
-                // keeps working.
+                // a safety net even after the server fix lands.
+                //
+                // CRITICAL: we resolve the list client-side, then always tell
+                // the Cloud Function we're in "custom" mode regardless of
+                // what the admin picked. If we kept `mode: "all"`, the
+                // function would see that flag and try its own server-side
+                // expansion — which today returns empty and silently
+                // overwrites our resolved list with []. Forcing "custom"
+                // makes our resolved recipients authoritative.
                 let recipients;
-                if (mode === "custom") {
+                if (uiMode === "custom") {
                     recipients = customUidsRaw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
                 } else {
                     recipients = await fetchBrandFollowers();
@@ -732,6 +738,7 @@
                         throw new Error("No followers found on the Zzzap Official account. Use Custom UIDs instead.");
                     }
                 }
+                const mode = "custom";
 
                 const openBallot = document.getElementById("open-ballot").checked;
                 // Scheduling: if toggled, pass an ISO timestamp; Cloud Function
