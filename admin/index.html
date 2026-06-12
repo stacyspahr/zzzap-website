@@ -292,6 +292,24 @@
             margin-right: 4px;
         }
 
+        /* Group action: "Teach these 5" / "Nudge all 14" — one click to
+           pre-fill compose with a whole subset of voters as recipients. */
+        .group-action {
+            display: inline-block;
+            margin-bottom: 8px;
+            background: #1f1f1f;
+            color: #f5c518;
+            border: 1px solid #333;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .group-action:hover { background: #2a2a2a; border-color: #f5c518; }
+        .group-action.nudge { color: #34c759; }
+        .group-action.nudge:hover { border-color: #34c759; }
+
         /* Vote comments — what a voter said alongside their vote */
         .vote-comments {
             margin-top: 10px;
@@ -1058,23 +1076,29 @@
         function renderPace(docs) {
             const now = Date.now();
             const day = 24 * 60 * 60 * 1000;
-            // Split last-7 into broadcasts vs 1-on-1 follow-ups so the
+            // Split last-7 into broadcasts vs targeted coaching so the
             // admin can read pacing per type — coaching cadence (which
             // can be heavy) shouldn't drown out broadcast cadence (which
-            // should stay light).
-            const isOneOnOne = d => (d.data.recipients || []).length === 1;
+            // should stay light). Same broadcast/targeted definition as
+            // the row badge: BROADCAST = recipient count matches full
+            // follower count, TARGETED = subset (single or group).
+            const fullFollowerCount = cachedBrandFollowers?.length || 0;
+            const isBroadcast = d => {
+                const len = (d.data.recipients || []).length;
+                return fullFollowerCount > 0 ? len === fullFollowerCount : len > 5;
+            };
             const within = (d, span) => {
                 const t = d.data.createdAt?.toDate?.()?.getTime?.() ?? 0;
                 return now - t < span;
             };
             const last7Docs = docs.filter(d => within(d, 7 * day));
-            const last7Broadcasts = last7Docs.filter(d => !isOneOnOne(d)).length;
-            const last7FollowUps = last7Docs.filter(d => isOneOnOne(d)).length;
+            const last7Broadcasts = last7Docs.filter(d => isBroadcast(d)).length;
+            const last7Targeted = last7Docs.filter(d => !isBroadcast(d)).length;
             const last30 = docs.filter(d => within(d, 30 * day)).length;
             return `
                 <div style="color:#999; font-size:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #222;">
                     <strong style="color:#f5c518;">${last7Broadcasts}</strong> broadcast${last7Broadcasts === 1 ? "" : "s"} ·
-                    <strong style="color:#f5c518;">${last7FollowUps}</strong> follow-up${last7FollowUps === 1 ? "" : "s"} in the last 7 days
+                    <strong style="color:#f5c518;">${last7Targeted}</strong> targeted in the last 7 days
                     <span style="margin-left:8px; color:#555;">(${last30} total in 30 days)</span>
                 </div>
             `;
@@ -1103,15 +1127,18 @@
             const stormBadge = isStorm
                 ? `<span style="font-size:10px; font-weight:700; color:#000; background:#f5c518; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">STORM</span>`
                 : "";
-            // Scope badge: BROADCAST when sent to multiple followers,
-            // 1-ON-1 when targeted at a single tester (a Teach or Custom
-            // follow-up). Lets the admin scan the timeline and separate
-            // "what coaching campaigns are active" from "who am I
-            // currently in dialogue with."
-            const isOneOnOne = recipients.length === 1;
-            const scopeBadge = isOneOnOne
-                ? `<span style="font-size:10px; font-weight:700; color:#bbb; background:#2a2a2a; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">1-ON-1</span>`
-                : `<span style="font-size:10px; font-weight:700; color:#000; background:#34c759; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">BROADCAST</span>`;
+            // Scope badge: BROADCAST when the recipient list matches the
+            // full Zzzap Official follower count, TARGETED for anything
+            // smaller (single voter follow-ups AND multi-voter group
+            // coaching). Falls back to the recipient-count heuristic
+            // when we haven't loaded the follower count yet.
+            const fullFollowerCount = cachedBrandFollowers?.length || 0;
+            const isBroadcast = fullFollowerCount > 0
+                ? recipients.length === fullFollowerCount
+                : recipients.length > 5; // best-effort fallback
+            const scopeBadge = isBroadcast
+                ? `<span style="font-size:10px; font-weight:700; color:#000; background:#34c759; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">BROADCAST</span>`
+                : `<span style="font-size:10px; font-weight:700; color:#bbb; background:#2a2a2a; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">TARGETED</span>`;
             return `
                 <div class="recent-zzzap expandable" data-poll-id="${id}" data-poll-type="${isStorm ? "storm" : "strike"}">
                     <div class="question">${stormBadge} ${scopeBadge} ${escapeHtml(data.question || "(no question)")}</div>
@@ -1137,6 +1164,20 @@
         // Click a Recent row → expand inline with vote details. Delegated
         // listener so it survives the row re-renders that onSnapshot triggers.
         recentList.addEventListener("click", async (e) => {
+            // Group action button — "Teach these N" or "Nudge all N"
+            const groupBtn = e.target.closest(".group-action");
+            if (groupBtn) {
+                e.stopPropagation();
+                const uids = (groupBtn.dataset.uids || "").split(",").filter(Boolean);
+                const action = groupBtn.dataset.action;
+                const tag = groupBtn.dataset.tag;
+                if (action === "teach" && tag) {
+                    sendTeachGroup(uids, tag);
+                } else {
+                    prefillFollowUpGroup(uids);
+                }
+                return;
+            }
             // Action button — either a chip in a voter pill or the small
             // Follow up link on a vote comment line. Same routing either
             // way: pre-fill compose with that uid + optional teach
@@ -1238,6 +1279,7 @@
                             <span class="option-result-count">${count} · ${pct}%</span>
                         </div>
                         <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
+                        ${renderGroupAction(byOption[i], ctx, "teach")}
                         ${renderVoterChips(byOption[i], ctx)}
                         ${renderVoteComments(byOption[i], ctx)}
                     </div>
@@ -1280,12 +1322,35 @@
                             <span class="option-result-count">${count} · ${pct}%</span>
                         </div>
                         <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
+                        ${renderGroupAction(a.voterIds || [], ctx, "teach")}
                         ${renderVoterChips(a.voterIds || [], ctx)}
                         ${renderVoteComments(a.voterIds || [], ctx)}
                     </div>
                 `;
             }).join("");
             return blocks + renderNonVoters(recipients, voters, ctx);
+        }
+
+        // Group action button — pre-fills compose with multiple recipients
+        // at once. Used when the admin wants to coach everyone who voted a
+        // certain way, or nudge everyone who hasn't voted yet. The button
+        // applies the matching teach template (if a featureTag is in scope)
+        // OR a blank prefill otherwise, then sets ALL the given uids as
+        // recipients and scrolls to compose.
+        function renderGroupAction(uids, ctx, kind /* "teach" | "nudge" */) {
+            if (uids.length < 2) return ""; // single-voter case is already covered by per-chip buttons
+            const teach = ctx?.featureTag ? teachTemplates[ctx.featureTag] : null;
+            // Labels: prefer the teach phrasing when we have one
+            let label;
+            if (kind === "nudge") {
+                label = `Nudge all ${uids.length}`;
+            } else {
+                label = teach ? `Teach these ${uids.length}` : `Follow up with ${uids.length}`;
+            }
+            const cls = kind === "nudge" ? "group-action nudge" : "group-action";
+            const tag = teach ? escapeHtml(ctx.featureTag) : "";
+            const action = teach && kind !== "nudge" ? "teach" : "custom";
+            return `<button class="${cls}" data-uids="${escapeHtml(uids.join(","))}" data-action="${action}" data-tag="${tag}">${label}</button>`;
         }
 
         function renderVoterChips(uids, ctx) {
@@ -1342,6 +1407,7 @@
             return `
                 <div class="non-voters">
                     <div class="non-voters-title">Hasn't voted yet (${nonVoters.length})</div>
+                    ${renderGroupAction(nonVoters, ctx, "nudge")}
                     ${renderVoterChips(nonVoters, ctx)}
                 </div>
             `;
@@ -1412,6 +1478,50 @@
             customUidsRow.classList.remove("hidden");
             document.getElementById("custom-uids").value = uid;
             updateRecipientsHint();
+        }
+
+        function lockRecipientsToUids(uids) {
+            recipientsSel.value = "custom";
+            customUidsRow.classList.remove("hidden");
+            document.getElementById("custom-uids").value = uids.join(", ");
+            updateRecipientsHint();
+        }
+
+        // Group teach: pre-fill the matching teach template AND set
+        // recipients to a list of voters (e.g. everyone who voted
+        // "What's that?" on the Pin awareness zzzap). One click,
+        // ready to send — the admin just hits Send Now.
+        function sendTeachGroup(uids, featureTag) {
+            const teach = teachTemplates[featureTag];
+            if (!teach) {
+                console.warn("[ADMIN] no teach template for", featureTag, "— falling back to blank group follow-up");
+                prefillFollowUpGroup(uids);
+                return;
+            }
+            pollTypeSel.value = "strike";
+            applyPollType();
+            document.getElementById("question").value = teach.question;
+            document.getElementById("time-limit").value = String(teach.timeLimit);
+            document.getElementById("open-ballot").checked = teach.openBallot !== false;
+            optionsContainer.innerHTML = teach.options.map((opt, i) => `
+                <div class="option-row">
+                    <input type="text" placeholder="Option ${i + 1}" class="option-input" value="${escapeHtml(opt)}" required>
+                    <button type="button" class="remove-option" title="Remove">×</button>
+                </div>
+            `).join("");
+            lockRecipientsToUids(uids);
+            document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
+            console.log("[ADMIN] group teach", featureTag, "pre-filled for", uids.length, "voters");
+        }
+
+        // Group blank follow-up: just set the recipient list, focus the
+        // question field. Used for nudging non-voters or for blanks
+        // when no teach template matches.
+        function prefillFollowUpGroup(uids) {
+            lockRecipientsToUids(uids);
+            document.getElementById("question").focus();
+            document.getElementById("question").scrollIntoView({ behavior: "smooth", block: "start" });
+            console.log("[ADMIN] group follow-up pre-filled for", uids.length, "voters");
         }
 
         // Resolves the set of UIDs that follow Zzzap Official.
