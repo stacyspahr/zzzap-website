@@ -64,6 +64,15 @@
             font-size: 12px;
             line-height: 1;
         }
+        .template-btn .template-last-sent {
+            display: block;
+            font-size: 11px;
+            margin-top: 4px;
+            font-style: italic;
+        }
+        .template-last-sent.fresh { color: #ff453a; }   /* sent <2d ago — don't repeat */
+        .template-last-sent.warm  { color: #f5c518; }   /* sent 3-7d ago — caution */
+        .template-last-sent.cool  { color: #34c759; }   /* sent >7d ago — safe to send */
 
         .admin-header {
             display: flex;
@@ -906,6 +915,32 @@
 
         const templatesList = document.getElementById("templates-list");
 
+        // For each template, find the most recent Recent zzzap whose
+        // question matches exactly. Drives the "Sent 3d ago" indicator
+        // so the admin can pace coaching and avoid repeating themselves.
+        // Matches by exact question text — if a template was edited
+        // before sending, it won't pick up the date (acceptable; templates
+        // are meant to be used as-is for cadence tracking).
+        function lastSentDateForTemplate(template) {
+            const q = template.question.trim().toLowerCase();
+            let mostRecent = null;
+            for (const d of recentDocs) {
+                if ((d.data.question || "").trim().toLowerCase() !== q) continue;
+                const t = d.data.createdAt?.toDate?.() || d.data.createdAt;
+                if (!t) continue;
+                if (!mostRecent || t > mostRecent) mostRecent = t;
+            }
+            return mostRecent;
+        }
+
+        function staleness(date) {
+            if (!date) return null;
+            const days = (Date.now() - date.getTime()) / 86400000;
+            if (days < 2) return "fresh";
+            if (days < 7) return "warm";
+            return "cool";
+        }
+
         function renderTemplates() {
             templatesList.innerHTML = templates.map((t, i) => {
                 // Bolt iconography rule: single bolt = Strike (decisive
@@ -913,6 +948,11 @@
                 // app + the marketing site's duo cards.
                 const isStorm = t.type === "storm";
                 const icon = isStorm ? "&#127786;" : "&#9889;";
+                const lastSent = lastSentDateForTemplate(t);
+                const stale = staleness(lastSent);
+                const lastSentLine = lastSent
+                    ? `<span class="template-last-sent ${stale}">Sent ${timeAgo(lastSent)}</span>`
+                    : "";
                 return `
                 <button type="button" class="template-btn" data-idx="${i}">
                     <span class="template-cat">
@@ -920,6 +960,7 @@
                         ${escapeHtml(t.category)}
                     </span>
                     ${escapeHtml(t.name)}
+                    ${lastSentLine}
                 </button>
                 `;
             }).join("");
@@ -981,12 +1022,16 @@
                     if (snap.empty) {
                         recentDocs = [];
                         recentList.innerHTML = `<p style="color:#666; font-size:13px;">No zzzaps from Zzzap Official yet.</p>`;
+                        renderTemplates();
                         return;
                     }
                     recentDocs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
                     const paceLine = renderPace(recentDocs);
                     const rows = recentDocs.map(d => renderRecent(d.id, d.data)).join("");
                     recentList.innerHTML = paceLine + rows;
+                    // Refresh the templates sidebar so each template's
+                    // "Sent X ago" indicator reflects the latest snapshot.
+                    renderTemplates();
                 },
                 (err) => {
                     recentList.innerHTML = `<p style="color:#ff453a; font-size:13px;">Couldn't load: ${err.message}<br><small>(Make sure Zak added your UID to the admins allowlist + the Firestore rule that lets admins read brand polls.)</small></p>`;
