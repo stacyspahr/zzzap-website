@@ -282,6 +282,36 @@
             font-weight: 700;
             margin-right: 4px;
         }
+
+        /* Vote comments — what a voter said alongside their vote */
+        .vote-comments {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #222;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .vote-comment {
+            font-size: 12px;
+            color: #ccc;
+            line-height: 1.45;
+        }
+        .vote-comment .vc-author {
+            color: #f5c518;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .vote-comment .vc-followup {
+            background: transparent;
+            color: #888;
+            border: none;
+            font-size: 11px;
+            margin-left: 6px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .vote-comment .vc-followup:hover { color: #f5c518; text-decoration: underline; }
         .non-voters {
             margin-top: 16px;
             padding-top: 12px;
@@ -1025,15 +1055,17 @@
         // Click a Recent row → expand inline with vote details. Delegated
         // listener so it survives the row re-renders that onSnapshot triggers.
         recentList.addEventListener("click", async (e) => {
-            // Chip action button → pre-fill compose, stop bubbling so the
-            // row doesn't also toggle expand/collapse on the same click
-            const chipBtn = e.target.closest(".voter-chip button");
-            if (chipBtn) {
+            // Action button — either a chip in a voter pill or the small
+            // Follow up link on a vote comment line. Same routing either
+            // way: pre-fill compose with that uid + optional teach
+            // template. stopPropagation so the row doesn't also toggle.
+            const actionBtn = e.target.closest(".voter-chip button, .vc-followup");
+            if (actionBtn) {
                 e.stopPropagation();
-                const uid = chipBtn.dataset.uid;
-                const action = chipBtn.dataset.action;
+                const uid = actionBtn.dataset.uid;
+                const action = actionBtn.dataset.action;
                 if (action === "teach") {
-                    const tag = chipBtn.dataset.tag;
+                    const tag = actionBtn.dataset.tag;
                     sendTeach(uid, tag);
                 } else {
                     prefillFollowUp(uid);
@@ -1081,6 +1113,7 @@
             //   featureTag → drives the Teach button content (null = blank Follow up)
             //   followedUpUids → uids already coached 1-on-1 after this parent;
             //     marked with a green check on their chip.
+            //   voteComments → uid → comment text the voter left with their vote
             const parentCreatedAt = poll.createdAt?.toDate?.() || poll.createdAt || new Date(0);
             const followedUpUids = new Set();
             for (const d of recentDocs) {
@@ -1093,7 +1126,8 @@
             }
             const ctx = {
                 featureTag: inferFeatureTag(poll.question),
-                followedUpUids
+                followedUpUids,
+                voteComments: poll.voteComments || {}
             };
 
             if (pollType === "storm") {
@@ -1123,6 +1157,7 @@
                         </div>
                         <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
                         ${renderVoterChips(byOption[i], ctx)}
+                        ${renderVoteComments(byOption[i], ctx)}
                     </div>
                 `;
             }).join("");
@@ -1164,6 +1199,7 @@
                         </div>
                         <div class="option-result-bar"><div class="option-result-bar-fill" style="width:${pct}%"></div></div>
                         ${renderVoterChips(a.voterIds || [], ctx)}
+                        ${renderVoteComments(a.voterIds || [], ctx)}
                     </div>
                 `;
             }).join("");
@@ -1194,6 +1230,28 @@
                 return `<span class="voter-chip">${check}${escapeHtml(name)} ${primary}${custom}</span>`;
             }).join("");
             return `<div class="voter-chips">${chips}</div>`;
+        }
+
+        // Vote comments: free-text a voter left alongside their vote. Only
+        // some voters comment, so this block only renders when at least
+        // one of the supplied uids has a comment. Each comment carries
+        // its own Follow up button so the admin can DM that specific
+        // voter without re-finding their chip.
+        function renderVoteComments(uids, ctx) {
+            const voteComments = ctx?.voteComments || {};
+            const withComments = uids.filter(uid => voteComments[uid] && voteComments[uid].trim().length > 0);
+            if (withComments.length === 0) return "";
+            const lines = withComments.map(uid => {
+                const name = userNameCache.get(uid) || `${uid.slice(0, 6)}…`;
+                const text = voteComments[uid];
+                return `
+                    <div class="vote-comment">
+                        <span class="vc-author">${escapeHtml(name)}:</span>${escapeHtml(text)}
+                        <button class="vc-followup" data-uid="${escapeHtml(uid)}" data-action="custom">Follow up</button>
+                    </div>
+                `;
+            }).join("");
+            return `<div class="vote-comments">${lines}</div>`;
         }
 
         function renderNonVoters(recipients, voters, ctx) {
