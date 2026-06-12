@@ -417,6 +417,7 @@
                             <option value="all" selected>All testers (everyone who follows Zzzap Official)</option>
                             <option value="custom">Specific UIDs (comma-separated)</option>
                         </select>
+                        <div id="recipients-hint" style="color: #999; font-size: 12px; margin-top: 6px;"></div>
                     </div>
 
                     <div class="form-row hidden" id="custom-uids-row">
@@ -505,7 +506,7 @@
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
             getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp,
-            getDocs, doc, documentId
+            getDoc, getDocs, doc, documentId
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
         import {
             getFunctions, httpsCallable
@@ -574,12 +575,14 @@
                 console.log("[ADMIN] signed in as", user.uid, "— send this UID to Zak for the allowlist");
                 startRecentListener();
                 startQueueListener();
+                updateRecipientsHint();
             } else {
                 signinView.classList.remove("hidden");
                 adminView.classList.add("hidden");
                 if (recentUnsub) { recentUnsub(); recentUnsub = null; }
                 if (queueUnsub) { queueUnsub(); queueUnsub = null; }
                 userNameCache.clear();
+                cachedBrandFollowers = null;
             }
         });
 
@@ -674,9 +677,22 @@
                     : null;
                 const mode = recipientsSel.value;
                 const customUidsRaw = document.getElementById("custom-uids").value;
-                const recipients = mode === "custom"
-                    ? customUidsRaw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean)
-                    : []; // empty array = "all" — Cloud Function expands to all followers
+                // Client-side expansion of "all testers" — the Cloud Function
+                // is supposed to do this server-side, but until ZZZ-298 ships
+                // we fetch the Zzzap Official followers array ourselves and
+                // pass the full UID list as `recipients`. Stays in place as
+                // a safety net even after the server fix lands: if the
+                // function ever drops the expansion again, the dashboard
+                // keeps working.
+                let recipients;
+                if (mode === "custom") {
+                    recipients = customUidsRaw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+                } else {
+                    recipients = await fetchBrandFollowers();
+                    if (recipients.length === 0) {
+                        throw new Error("No followers found on the Zzzap Official account. Use Custom UIDs instead.");
+                    }
+                }
 
                 const openBallot = document.getElementById("open-ballot").checked;
                 // Scheduling: if toggled, pass an ISO timestamp; Cloud Function
@@ -1255,7 +1271,56 @@
             recipientsSel.value = "custom";
             customUidsRow.classList.remove("hidden");
             document.getElementById("custom-uids").value = uid;
+            updateRecipientsHint();
         }
+
+        // Fetches the followers array off users/zzzap_official. Cached for
+        // the session so the form submit and the live hint don't double-read.
+        // Refreshed each time we want a fresh count.
+        let cachedBrandFollowers = null;
+        async function fetchBrandFollowers({ force = false } = {}) {
+            if (cachedBrandFollowers && !force) return cachedBrandFollowers;
+            const snap = await getDoc(doc(db, "users", "zzzap_official"));
+            if (!snap.exists()) {
+                cachedBrandFollowers = [];
+                return cachedBrandFollowers;
+            }
+            const data = snap.data();
+            cachedBrandFollowers = Array.isArray(data.followers) ? data.followers : [];
+            return cachedBrandFollowers;
+        }
+
+        // Updates the small hint under the Recipients dropdown so the admin
+        // can see how many testers a broadcast will actually reach before
+        // they hit Send.
+        const recipientsHint = document.getElementById("recipients-hint");
+        async function updateRecipientsHint() {
+            if (recipientsSel.value === "custom") {
+                const raw = document.getElementById("custom-uids").value;
+                const count = raw.split(/[,\s]+/).map(s => s.trim()).filter(Boolean).length;
+                recipientsHint.textContent = count === 0
+                    ? "Add at least one UID."
+                    : `Will send to ${count} ${count === 1 ? "tester" : "testers"}.`;
+                return;
+            }
+            // "all" mode — fetch the live count
+            recipientsHint.textContent = "Counting followers…";
+            try {
+                const followers = await fetchBrandFollowers({ force: true });
+                if (followers.length === 0) {
+                    recipientsHint.textContent = "No followers found on Zzzap Official. Switch to Custom UIDs.";
+                    recipientsHint.style.color = "#ff453a";
+                } else {
+                    recipientsHint.textContent = `Will send to ${followers.length} ${followers.length === 1 ? "tester" : "testers"}.`;
+                    recipientsHint.style.color = "#34c759";
+                }
+            } catch (err) {
+                recipientsHint.textContent = `Couldn't read follower count: ${err.message}`;
+                recipientsHint.style.color = "#ff453a";
+            }
+        }
+        recipientsSel.addEventListener("change", updateRecipientsHint);
+        document.getElementById("custom-uids").addEventListener("input", updateRecipientsHint);
 
         function timeAgo(date) {
             const diffMs = Date.now() - date.getTime();
