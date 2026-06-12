@@ -861,42 +861,46 @@
         // are the implementation-intention + escalation trio. The "Still
         // not clear" option is the trip-wire that tells Stacy to text the
         // tester directly (Tier 3 in the coaching playbook).
+        // Teach templates use a 4h window — long enough to feel polite,
+        // short enough to keep the implementation-intention ("Sending
+        // one now") fresh. Broadcasts can sit 24h; 1-on-1 coaching
+        // shouldn't claim "23h left" all day.
         const teachTemplates = {
             storm: {
                 name: "Teach: Storm",
                 question: "A Storm lets voters write in their own answers. No preset options, just a question and a place to brainstorm. Try one?",
                 options: ["Sending one now.", "Got it. Will try later.", "Still not clear."],
-                timeLimit: 1440, openBallot: true
+                timeLimit: 240, openBallot: true
             },
             lock_screen: {
                 name: "Teach: Lock-screen voting",
                 question: "You can vote on a zzzap without unlocking your phone. Long-press the notification, options appear, tap one. Try it next time you get a zzzap?",
                 options: ["Trying it next time.", "Got it. Will try later.", "Still not clear."],
-                timeLimit: 1440, openBallot: true
+                timeLimit: 240, openBallot: true
             },
             smart_groups: {
                 name: "Teach: Smart Groups",
                 question: "Smart Groups are pre-built recipient lists. Close Friends, Family, Mutuals. Pick one when sending instead of selecting people one by one. Try one?",
                 options: ["Setting one up now.", "Got it. Will try later.", "Still not clear."],
-                timeLimit: 1440, openBallot: true
+                timeLimit: 240, openBallot: true
             },
             private: {
                 name: "Teach: Private zzzaps",
                 question: "Private zzzaps auto-destroy 30 seconds after viewing. Perfect for personal stuff. Try one now?",
                 options: ["Sending one now.", "Got it. Will try later.", "Still not clear."],
-                timeLimit: 1440, openBallot: true
+                timeLimit: 240, openBallot: true
             },
             scheduling: {
                 name: "Teach: Scheduling",
                 question: "You can schedule a zzzap to send later. Useful for asking around dinner without setting a reminder. Try it?",
                 options: ["Trying it now.", "Got it. Will try later.", "Still not clear."],
-                timeLimit: 1440, openBallot: true
+                timeLimit: 240, openBallot: true
             },
             pin: {
                 name: "Teach: Pinning",
                 question: "Pin a zzzap to the top of your feed by long-pressing the row. Stays put until you unpin. Try it on any active zzzap?",
                 options: ["Trying it now.", "Got it. Will try later.", "Still not clear."],
-                timeLimit: 1440, openBallot: true
+                timeLimit: 240, openBallot: true
             }
         };
 
@@ -1047,17 +1051,24 @@
         function renderPace(docs) {
             const now = Date.now();
             const day = 24 * 60 * 60 * 1000;
-            const last7 = docs.filter(d => {
+            // Split last-7 into broadcasts vs 1-on-1 follow-ups so the
+            // admin can read pacing per type — coaching cadence (which
+            // can be heavy) shouldn't drown out broadcast cadence (which
+            // should stay light).
+            const isOneOnOne = d => (d.data.recipients || []).length === 1;
+            const within = (d, span) => {
                 const t = d.data.createdAt?.toDate?.()?.getTime?.() ?? 0;
-                return now - t < 7 * day;
-            }).length;
-            const last30 = docs.filter(d => {
-                const t = d.data.createdAt?.toDate?.()?.getTime?.() ?? 0;
-                return now - t < 30 * day;
-            }).length;
+                return now - t < span;
+            };
+            const last7Docs = docs.filter(d => within(d, 7 * day));
+            const last7Broadcasts = last7Docs.filter(d => !isOneOnOne(d)).length;
+            const last7FollowUps = last7Docs.filter(d => isOneOnOne(d)).length;
+            const last30 = docs.filter(d => within(d, 30 * day)).length;
             return `
                 <div style="color:#999; font-size:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #222;">
-                    <strong style="color:#f5c518;">${last7}</strong> in the last 7 days · <strong style="color:#f5c518;">${last30}</strong> in the last 30 days
+                    <strong style="color:#f5c518;">${last7Broadcasts}</strong> broadcast${last7Broadcasts === 1 ? "" : "s"} ·
+                    <strong style="color:#f5c518;">${last7FollowUps}</strong> follow-up${last7FollowUps === 1 ? "" : "s"} in the last 7 days
+                    <span style="margin-left:8px; color:#555;">(${last30} total in 30 days)</span>
                 </div>
             `;
         }
@@ -1068,19 +1079,35 @@
             const total = recipients.length;
             const expiresAt = data.expiresAt?.toDate?.() || data.expiresAt;
             const now = new Date();
-            const isActive = expiresAt && expiresAt > now;
+            // Mirror the iOS poll-state logic: a zzzap is effectively
+            // closed once everybody who could vote has voted, even if
+            // the doc's expiresAt is still in the future. Without this,
+            // 1-on-1 follow-ups stay ACTIVE for 24h after the single
+            // recipient has acted, which clutters the active set and
+            // misrepresents what's actually outstanding.
+            const allVoted = total > 0 && voters >= total;
+            const isActive = expiresAt && expiresAt > now && !allVoted;
             const statusLabel = isActive ? "ACTIVE" : "CLOSED";
             const statusClass = isActive ? "status-active" : "status-closed";
             const createdAt = data.createdAt?.toDate?.() || data.createdAt;
             const ago = createdAt ? timeAgo(createdAt) : "—";
             const absolute = createdAt ? formatAbsolute(createdAt) : "";
             const isStorm = (data.pollType || "").toLowerCase() === "storm";
-            const typeBadge = isStorm
+            const stormBadge = isStorm
                 ? `<span style="font-size:10px; font-weight:700; color:#000; background:#f5c518; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">STORM</span>`
                 : "";
+            // Scope badge: BROADCAST when sent to multiple followers,
+            // 1-ON-1 when targeted at a single tester (a Teach or Custom
+            // follow-up). Lets the admin scan the timeline and separate
+            // "what coaching campaigns are active" from "who am I
+            // currently in dialogue with."
+            const isOneOnOne = recipients.length === 1;
+            const scopeBadge = isOneOnOne
+                ? `<span style="font-size:10px; font-weight:700; color:#bbb; background:#2a2a2a; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">1-ON-1</span>`
+                : `<span style="font-size:10px; font-weight:700; color:#000; background:#34c759; padding:1px 6px; border-radius:6px; letter-spacing:0.5px;">BROADCAST</span>`;
             return `
                 <div class="recent-zzzap expandable" data-poll-id="${id}" data-poll-type="${isStorm ? "storm" : "strike"}">
-                    <div class="question">${typeBadge} ${escapeHtml(data.question || "(no question)")}</div>
+                    <div class="question">${stormBadge} ${scopeBadge} ${escapeHtml(data.question || "(no question)")}</div>
                     <div class="meta">
                         <span class="${statusClass}">${statusLabel}</span>
                         <span>${voters} of ${total} voted</span>
