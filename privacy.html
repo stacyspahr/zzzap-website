@@ -30,7 +30,7 @@
                 <li><strong>Account information:</strong> When you sign in with Apple, we receive your Apple ID identifier and, if you choose to share it, your email address and display name. You may also add a real name and phone number to your profile.</li>
                 <li><strong>Profile photo:</strong> If you upload a profile photo, it is stored on our servers (Firebase Storage).</li>
                 <li><strong>Zzzap data:</strong> Questions, answer options, votes, recipient lists, and photos you include in photo zzzaps are stored on our servers (Firebase) to deliver the experience.</li>
-                <li><strong>Social connections:</strong> Your follower and following relationships, groups, and nicknames you set for friends and groups are stored to power the app's social features.</li>
+                <li><strong>Social connections:</strong> Your follower and following relationships, circles, and nicknames you set for friends and circles are stored to power the app's social features.</li>
                 <li><strong>Invite codes:</strong> Each user receives a unique invite code. When codes are redeemed, we track who invited whom to enable mutual follow and measure growth.</li>
                 <li><strong>Push notification tokens:</strong> We store your device token to send you notifications about zzzaps you've received or created.</li>
                 <li><strong>Searchability preferences:</strong> You control whether other users can find you by name, email, or phone number. These preferences are stored with your account.</li>
@@ -47,7 +47,7 @@
             <ul>
                 <li><strong>Text moderation:</strong> Poll questions and answer options are checked against an AI safety filter before delivery.</li>
                 <li><strong>Storm summarization:</strong> When a voter writes a long-form answer in a Storm, we send the text to OpenAI to generate a short headline for the leaderboard. The voter sees the suggestion and may edit or replace it.</li>
-                <li><strong>Storm clustering:</strong> After a Storm closes, we send the full set of write-in answers to OpenAI to cluster similar ideas so the creator can merge duplicates efficiently.</li>
+                <li><strong>Storm summary:</strong> After a Storm closes, we send the full set of write-in answers to OpenAI to produce a short editorial summary of the themes so the creator can read the digest at a glance. Raw answers remain visible alongside the summary.</li>
                 <li><strong>Decision metadata:</strong> Poll questions and options may be sent to OpenAI to classify them (e.g., intent, urgency, category) so future features can offer smarter recommendations.</li>
             </ul>
             <p>Content sent to OpenAI is processed under their API terms and is not retained by OpenAI for model training. These AI assists are built into the foundation of the app, so they cannot be disabled by individual users.</p>
