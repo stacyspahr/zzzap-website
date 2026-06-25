@@ -842,8 +842,12 @@
               options: ["Yes, used it", "Not yet. Trying it now.", "Show me where"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Send Feedback?", featureTag: "feedback",
-              question: "Have you used the Send Feedback link on Home? It's where ideas and bugs go.",
+              question: "Have you used Send Feedback yet? It lives in your Profile, under Settings. Anything that feels off goes there.",
               options: ["Yes, sent some", "Not yet. Sending one now.", "Show me where"],
+              timeLimit: 1440, openBallot: true },
+            { category: "Awareness", name: "Editing a zzzap?", featureTag: "edit",
+              question: "Have you edited a zzzap after sending it? Works on scheduled ones, and on any that nobody's voted on yet.",
+              options: ["Yes, used it", "Not yet. Trying it now.", "Show me how"],
               timeLimit: 1440, openBallot: true },
             { category: "Awareness", name: "Dynamic Island?", featureTag: "dynamic_island",
               question: "Have you watched a zzzap from the Dynamic Island yet? Tap and hold the pill to see the countdown and live tally.",
@@ -877,6 +881,14 @@
               question: "What's one thing Zzzap is missing for you?",
               stormCharLimit: 50,
               timeLimit: 4320, openBallot: false },
+            { category: "Friction", name: "Noisiest part of the app",
+              question: "What feels noisiest in Zzzap right now?",
+              options: ["The Home tab", "The Zzzaps tab", "Notifications", "Nothing really"],
+              timeLimit: 2880, openBallot: false },
+            { category: "Friction", name: "Regressions?",
+              question: "Anything that used to work and now doesn't?",
+              options: ["Yes. Sending it through Feedback.", "Not that I've noticed", "Haven't used it enough"],
+              timeLimit: 2880, openBallot: false },
 
             // PRIORITIZATION — editorial framing.
             { category: "Prioritization", name: "Most-wanted Power capability",
@@ -892,6 +904,10 @@
               question: "If you could add one feature to Zzzap, what would it be?",
               stormCharLimit: 50,
               timeLimit: 4320, openBallot: true },
+            { category: "Prioritization", name: "New card look",
+              question: "How do the new Zzzap cards feel? Status pills are mostly gone, the result leads, the type sits behind as a watermark.",
+              options: ["Cleaner. Keep going.", "About the same", "Liked the old way better"],
+              timeLimit: 2880, openBallot: true },
 
             // QUICK — voice can relax slightly for real-life filler.
             { category: "Quick", name: "Friday plans?",
@@ -959,8 +975,14 @@
             },
             feedback: {
                 name: "Teach: Send Feedback",
-                question: "The Send Feedback button lives on Home, right below the main Zzzap button. Anything that feels off, send it through. Try it now?",
+                question: "Send Feedback lives in your Profile, under Settings. Anything that feels off, send it through. Try it now?",
                 options: ["Sending one now.", "Got it. Will try later.", "Still not clear."],
+                timeLimit: 240, openBallot: true
+            },
+            edit: {
+                name: "Teach: Editing a zzzap",
+                question: "You can edit a zzzap after sending. Open it, tap Edit. Works on scheduled zzzaps and on any that nobody's voted on yet. Try it next time?",
+                options: ["Trying it next time.", "Got it. Will try later.", "Still not clear."],
                 timeLimit: 240, openBallot: true
             },
             dynamic_island: {
