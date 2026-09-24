@@ -89,10 +89,15 @@ header {
     text-align: center;
 }
 
+/* Inline SVG now, not emoji — so the glyphs match the app's SF Symbols and
+   take the brand yellow instead of whatever colors the OS emoji font picks.
+   currentColor in the markup is what makes the color rule below work. */
 .duo-icon {
-    font-size: 36px;
+    width: 36px;
+    height: 36px;
     display: block;
-    margin-bottom: 12px;
+    margin: 0 auto 12px;
+    color: #f5c518;
 }
 
 .duo-card h3 {
@@ -173,9 +178,11 @@ header {
 }
 
 .feature .icon {
-    font-size: 36px;
+    width: 36px;
+    height: 36px;
     display: block;
-    margin-bottom: 12px;
+    margin: 0 auto 12px;
+    color: #f5c518;
 }
 
 .feature h3 {
