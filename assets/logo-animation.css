@@ -1,0 +1,121 @@
+/*  Animated Zzzap lockup — header.
+ *
+ *  Keyframes lifted verbatim from the app's design export
+ *  (zap/zap/ZzzapLogoAnimation.html); the 12 keyframes that export carried but
+ *  no longer referenced are left out. Generated values — retune them in the
+ *  design source, not here.
+ *
+ *  Layout and the reduced-motion fallback below are the web-specific part.
+ */
+
+/*  The tagline inside the lockup is the page's only non-system type. This is
+ *  the same Nunito 600 latin subset the app's export embeds, self-hosted so the
+ *  marketing site doesn't reach out to a font CDN for one line of text.
+ */
+@font-face {
+    font-family: 'Nunito';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("nunito-600-latin.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+        U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+        U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.logo-stage {
+    --glow: 1;                  /* multiplier the bolt-glow keyframes scale by */
+    display: grid;
+    place-items: center;
+}
+
+.logo-stage .logo {
+    /* Size by height and let the width follow the viewBox aspect, so the
+       lockup lands close to the 360px-wide wordmark it replaces. */
+    height: clamp(300px, 46vw, 400px);
+    width: auto;
+    overflow: visible;          /* the bolt glow spills past the viewBox */
+}
+
+@keyframes zzHalo{0%,100%{opacity:.14;transform:scale(1)}50%{opacity:.26;transform:scale(1.1)}}
+@keyframes zzGlowA{
+    0%{filter:drop-shadow(0 0 calc(4px*var(--glow,1)) rgba(255,205,70,.26)) drop-shadow(0 0 calc(11px*var(--glow,1)) rgba(255,150,25,.13))}
+    26%{filter:drop-shadow(0 0 calc(6px*var(--glow,1)) rgba(255,212,80,.34)) drop-shadow(0 0 calc(14px*var(--glow,1)) rgba(255,158,30,.17))}
+    44%{filter:drop-shadow(0 0 calc(4px*var(--glow,1)) rgba(255,205,70,.25)) drop-shadow(0 0 calc(11px*var(--glow,1)) rgba(255,150,25,.13))}
+    67%{filter:drop-shadow(0 0 calc(6px*var(--glow,1)) rgba(255,214,82,.36)) drop-shadow(0 0 calc(15px*var(--glow,1)) rgba(255,160,32,.18))}
+    100%{filter:drop-shadow(0 0 calc(4px*var(--glow,1)) rgba(255,205,70,.26)) drop-shadow(0 0 calc(11px*var(--glow,1)) rgba(255,150,25,.13))}
+}
+@keyframes zzGlowB{
+    0%{filter:drop-shadow(0 0 calc(5px*var(--glow,1)) rgba(255,210,78,.3)) drop-shadow(0 0 calc(13px*var(--glow,1)) rgba(255,155,28,.15))}
+    22%{filter:drop-shadow(0 0 calc(4px*var(--glow,1)) rgba(255,205,70,.24)) drop-shadow(0 0 calc(11px*var(--glow,1)) rgba(255,150,25,.12))}
+    50%{filter:drop-shadow(0 0 calc(6px*var(--glow,1)) rgba(255,214,84,.36)) drop-shadow(0 0 calc(15px*var(--glow,1)) rgba(255,160,32,.18))}
+    74%{filter:drop-shadow(0 0 calc(4px*var(--glow,1)) rgba(255,206,72,.27)) drop-shadow(0 0 calc(12px*var(--glow,1)) rgba(255,152,26,.14))}
+    100%{filter:drop-shadow(0 0 calc(5px*var(--glow,1)) rgba(255,210,78,.3)) drop-shadow(0 0 calc(13px*var(--glow,1)) rgba(255,155,28,.15))}
+}
+@keyframes zzSparkFly{
+    0%{opacity:0;transform:translate(0,0) scale(1.4)}20%{opacity:0}28%{opacity:1}
+    100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px)) scale(.2)}
+}
+@keyframes zzEmber{0%,100%{opacity:.16}50%{opacity:.32}}
+@keyframes zzWipe{
+    0%{transform:scaleY(0)}
+    100%{transform:scaleY(1)}
+}
+@keyframes zzStrobe{
+    0%{opacity:0}5%{opacity:1}11%{opacity:.06}17%{opacity:1}24%{opacity:.12}
+    32%{opacity:.9}42%{opacity:.05}52%{opacity:.55}64%{opacity:.04}78%{opacity:.24}100%{opacity:0}
+}
+@keyframes zzShake{
+    0%{transform:translate(0,0)}21%{transform:translate(0,0)}
+    24%{transform:translate(2.5px,-1.5px)}28%{transform:translate(-2.5px,2px)}
+    32%{transform:translate(1.5px,1.5px)}36%{transform:translate(-1.5px,-1px)}
+    42%{transform:translate(.5px,.5px)}100%{transform:translate(0,0)}
+}
+@keyframes zzMicroShake{
+    0%,100%{transform:translate(0,0)}25%{transform:translate(1.2px,-1px)}
+    50%{transform:translate(-1.4px,.8px)}75%{transform:translate(.8px,1px)}
+}
+@keyframes zzBurst{
+    0%{opacity:0;transform:scale(.2)}20%{opacity:0;transform:scale(.2)}
+    23%{opacity:1;transform:scale(1)}60%{opacity:.45;transform:scale(1.7)}100%{opacity:0;transform:scale(2.3)}
+}
+@keyframes zzZImpact{
+    0%{opacity:0;transform:scale(.3)}9%{opacity:0;transform:scale(.3)}
+    14%{opacity:1;transform:scale(1)}42%{opacity:.5;transform:scale(1.55)}72%{opacity:0;transform:scale(1.95)}100%{opacity:0;transform:scale(1.95)}
+}
+@keyframes zzFlickA{
+    0%,14%{opacity:0}17%{opacity:.7}21%{opacity:0}30%{opacity:.9}35%{opacity:.08}
+    44%{opacity:1}51%{opacity:.25}60%{opacity:1}70%{opacity:.5}78%{opacity:1}100%{opacity:1}
+}
+@keyframes zzFlickB{
+    0%,26%{opacity:0}29%{opacity:.5}33%{opacity:0}41%{opacity:.85}47%{opacity:.05}
+    56%{opacity:.6}63%{opacity:0}71%{opacity:1}80%{opacity:.4}88%{opacity:1}100%{opacity:1}
+}
+@keyframes zzFlickC{
+    0%,19%{opacity:0}23%{opacity:1}29%{opacity:.1}42%{opacity:1}49%{opacity:.2}
+    58%{opacity:.9}66%{opacity:.05}74%{opacity:1}100%{opacity:1}
+}
+@keyframes zzTagFade{0%{opacity:0}100%{opacity:.85}}
+
+@media (prefers-reduced-motion: reduce) {
+    /*  The resting markup is the finished lockup, so stilling every layer
+     *  leaves exactly the mark the static PNG used to show.
+     *  logo-animation.js reads the same query and never starts the strike loop.
+     */
+    .logo-stage .logo,
+    .logo-stage .logo * {
+        animation: none !important;
+    }
+
+    /*  Three layers only look right mid-animation, so they need a resting value
+     *  once their keyframes are off: the halo and the ember under the z would
+     *  otherwise jump to their (much brighter) markup opacity, and the bolts
+     *  would lose their glow altogether.
+     */
+    .logo-stage .halo { opacity: .2; }
+    .logo-stage .zhot { opacity: .24; }
+    .logo-stage .side {
+        filter: drop-shadow(0 0 4px rgba(255, 205, 70, .26))
+                drop-shadow(0 0 11px rgba(255, 150, 25, .13));
+    }
+}

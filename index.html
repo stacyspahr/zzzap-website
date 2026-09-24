@@ -20,13 +20,96 @@
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/logo-animation.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <img src="assets/marketing/wordmark-tagline-transparent.png"
-                 alt="Zzzap. Trusted Sources. Real Decisions."
-                 class="wordmark">
+            <!-- The app's home-screen lockup, animated. Markup generated from the
+                 design export (zap/zap/ZzzapLogoAnimation.html) — regenerate it
+                 there rather than hand-editing the path data. The resting state
+                 below is the finished logo, so it stands in for the static
+                 wordmark on its own if the stylesheet or script never arrives.
+                 aria-hidden because the sr-only heading and tagline already
+                 carry the wordmark's text. -->
+            <div class="logo-stage" id="zzzap-logo">
+                <svg class="logo" viewBox="-24 26 288 312" aria-hidden="true" focusable="false">
+                    <!-- Tightened from the export's "-24 -24 288 360": that framing
+                         leaves a quarter of its height empty above the bolts, which the
+                         app can afford in a full-screen frame and a page header cannot.
+                         Glow still spills past the box — the SVG is overflow:visible. -->
+                    <defs>
+                        <linearGradient id="zzBolt" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#F08C00"></stop>
+                            <stop offset="1" stop-color="#FFE84D"></stop>
+                        </linearGradient>
+                        <radialGradient id="zzSpk">
+                            <stop offset="0" stop-color="#FFF7CC" stop-opacity="0.95"></stop>
+                            <stop offset="0.5" stop-color="#FFD84D" stop-opacity="0.5"></stop>
+                            <stop offset="1" stop-color="#FFD84D" stop-opacity="0"></stop>
+                        </radialGradient>
+                        <linearGradient id="zzGroundGrad" gradientUnits="userSpaceOnUse" x1="0" y1="86" x2="0" y2="106">
+                            <stop offset="0" stop-color="#ffffff"></stop>
+                            <stop offset="1" stop-color="#000000"></stop>
+                        </linearGradient>
+                        <mask id="zzGroundMask" maskUnits="userSpaceOnUse" x="-60" y="-60" width="220" height="220">
+                            <rect x="-60" y="-60" width="220" height="220" fill="url(#zzGroundGrad)"></rect>
+                        </mask>
+                        <linearGradient id="zzHotGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#FF8A1F" stop-opacity="1"></stop>
+                            <stop offset="0.4" stop-color="#FF8A1F" stop-opacity="0.5"></stop>
+                            <stop offset="0.8" stop-color="#FF8A1F" stop-opacity="0.08"></stop>
+                            <stop offset="1" stop-color="#FF8A1F" stop-opacity="0"></stop>
+                        </linearGradient>
+                        <clipPath id="zzWipeL" clipPathUnits="userSpaceOnUse">
+                            <rect class="wipeL" x="-12" y="8" width="76" height="106" style="transform-box:fill-box;transform-origin:50% 0%;transform:scaleY(1);"></rect>
+                        </clipPath>
+                        <clipPath id="zzWipeR" clipPathUnits="userSpaceOnUse">
+                            <rect class="wipeR" x="36" y="8" width="76" height="106" style="transform-box:fill-box;transform-origin:50% 0%;transform:scaleY(1);"></rect>
+                        </clipPath>
+                    </defs>
+                    <g class="shake">
+                        <g class="boltgrp" style="transform:scale(2.4) translateY(10.8px);">
+                            <circle class="halo" cx="50" cy="94" r="10" fill="url(#zzSpk)" mask="url(#zzGroundMask)" style="transform-box:fill-box;transform-origin:center;animation:zzHalo 3.4s ease-in-out infinite;"></circle>
+                            <g class="side sideL" style="animation:zzGlowA 9.5s ease-in-out infinite;">
+                                <g class="glowL" clip-path="url(#zzWipeL)">
+                                    <polygon class="bolt bl" points="5.25,17.77 43.75,54.97 30.83,60.99 50.00,94.00 11.50,56.80 24.42,50.78" fill="url(#zzBolt)" style="opacity:1;"></polygon>
+                                    <polygon class="hot bl" points="5.25,17.77 43.75,54.97 30.83,60.99 50.00,94.00 11.50,56.80 24.42,50.78" fill="#FFFDEB" style="opacity:0;"></polygon>
+                                </g>
+                            </g>
+                            <g class="side sideR" style="animation:zzGlowB 12.5s ease-in-out infinite;">
+                                <g class="glowR" clip-path="url(#zzWipeR)">
+                                    <polygon class="bolt br" points="94.75,17.77 56.25,54.97 69.17,60.99 50.00,94.00 88.50,56.80 75.58,50.78" fill="url(#zzBolt)" style="opacity:1;"></polygon>
+                                    <polygon class="hot br" points="94.75,17.77 56.25,54.97 69.17,60.99 50.00,94.00 88.50,56.80 75.58,50.78" fill="#FFFDEB" style="opacity:0;"></polygon>
+                                </g>
+                            </g>
+                            <g class="arcs" fill="none" stroke="#FFFDEB" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round">
+                                <path class="arc" d="M31,57 L40,63 L35,68 L47,72 L43,78 L50,84" style="opacity:0;"></path>
+                                <path class="arc" d="M69,57 L60,63 L65,68 L53,72 L57,78 L50,84" style="opacity:0;"></path>
+                                <path class="arc" d="M34,54 L48,60 L42,64 L66,56" style="opacity:0;"></path>
+                            </g>
+                            <circle class="spark" cx="50" cy="94" r="5" fill="url(#zzSpk)" mask="url(#zzGroundMask)" style="opacity:.5;transform-box:fill-box;transform-origin:center;"></circle>
+                            <circle class="burst" cx="50" cy="94" r="9" fill="url(#zzSpk)" mask="url(#zzGroundMask)" style="opacity:0;transform-box:fill-box;transform-origin:center;"></circle>
+                            <g class="sparks" transform="translate(50 94)">
+                                <circle class="spk" r="1.1" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:-15px;--dy:11px;animation:zzSparkFly 520ms both;"></circle>
+                                <circle class="spk" r="1" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:-8px;--dy:21px;animation:zzSparkFly 560ms both;"></circle>
+                                <circle class="spk" r="1.2" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:-2px;--dy:25px;animation:zzSparkFly 600ms both;"></circle>
+                                <circle class="spk" r="1" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:5px;--dy:23px;animation:zzSparkFly 540ms both;"></circle>
+                                <circle class="spk" r="1.1" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:12px;--dy:17px;animation:zzSparkFly 580ms both;"></circle>
+                                <circle class="spk" r="1" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:16px;--dy:6px;animation:zzSparkFly 500ms both;"></circle>
+                                <circle class="spk" r="0.9" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:-11px;--dy:-6px;animation:zzSparkFly 520ms both;"></circle>
+                                <circle class="spk" r="0.9" fill="#FFFDEB" style="opacity:0;transform-box:fill-box;transform-origin:center;--dx:10px;--dy:-7px;animation:zzSparkFly 540ms both;"></circle>
+                            </g>
+                        </g>
+                        <g class="wordgrp">
+                            <path class="word" transform="translate(32.95 285)" fill="#F4F4F7" fill-rule="nonzero" style="opacity:1;" d="M2.78 -0.00 L2.78 -6.16 L25.72 -37.12 L25.72 -37.31 L3.31 -37.31 L3.31 -45.09 L36.95 -45.09 L36.95 -38.95 L14.11 -7.97 L14.11 -7.78 L37.59 -7.78 L37.59 -0.00 Z M41.92 -0.00 L41.92 -5.19 L58.77 -26.45 L58.77 -26.62 L42.19 -26.62 L42.19 -33.50 L69.20 -33.50 L69.20 -27.72 L53.38 -7.05 L53.38 -6.88 L69.59 -6.88 L69.59 -0.00 Z M73.47 -0.00 L73.47 -5.19 L90.31 -26.45 L90.31 -26.62 L73.73 -26.62 L73.73 -33.50 L100.75 -33.50 L100.75 -27.72 L84.92 -7.05 L84.92 -6.88 L101.14 -6.88 L101.14 -0.00 Z M115.62 0.53 Q112.28 0.53 109.74 -0.77 Q107.20 -2.06 105.78 -4.35 Q104.36 -6.64 104.36 -9.59 L104.36 -9.64 Q104.36 -12.70 105.89 -14.88 Q107.42 -17.05 110.34 -18.30 Q113.25 -19.56 117.41 -19.83 L130.47 -20.64 L130.47 -14.97 L118.78 -14.20 Q116.14 -14.05 114.77 -12.97 Q113.39 -11.89 113.39 -10.11 L113.39 -10.06 Q113.39 -8.22 114.80 -7.17 Q116.22 -6.12 118.58 -6.12 Q120.62 -6.12 122.23 -6.92 Q123.83 -7.72 124.76 -9.11 Q125.69 -10.50 125.69 -12.23 L125.69 -22.39 Q125.69 -24.62 124.27 -25.91 Q122.86 -27.20 120.17 -27.20 Q117.62 -27.20 116.12 -26.15 Q114.61 -25.09 114.27 -23.47 L114.20 -23.17 L105.86 -23.17 L105.89 -23.55 Q106.16 -26.66 107.95 -29.05 Q109.75 -31.45 112.95 -32.82 Q116.14 -34.19 120.56 -34.19 Q124.89 -34.19 128.09 -32.79 Q131.28 -31.39 133.05 -28.87 Q134.81 -26.34 134.81 -22.97 L134.81 -0.00 L125.69 -0.00 L125.69 -4.98 L125.50 -4.98 Q124.55 -3.28 123.07 -2.04 Q121.59 -0.80 119.71 -0.13 Q117.83 0.53 115.62 0.53 Z M139.89 10.94 L139.89 -33.50 L149.02 -33.50 L149.02 -27.64 L149.22 -27.64 Q150.14 -29.69 151.62 -31.15 Q153.11 -32.61 155.09 -33.40 Q157.08 -34.19 159.45 -34.19 Q163.70 -34.19 166.77 -32.11 Q169.83 -30.03 171.48 -26.12 Q173.12 -22.22 173.12 -16.77 L173.12 -16.73 Q173.12 -11.30 171.48 -7.40 Q169.84 -3.50 166.81 -1.41 Q163.78 0.69 159.58 0.69 Q157.19 0.69 155.16 -0.09 Q153.14 -0.86 151.63 -2.29 Q150.12 -3.72 149.20 -5.70 L149.02 -5.70 L149.02 10.94 Z M156.44 -6.88 Q158.72 -6.88 160.38 -8.08 Q162.05 -9.28 162.95 -11.49 Q163.84 -13.70 163.84 -16.73 L163.84 -16.77 Q163.84 -19.84 162.94 -22.05 Q162.03 -24.27 160.37 -25.45 Q158.70 -26.62 156.44 -26.62 Q154.23 -26.62 152.55 -25.42 Q150.86 -24.22 149.91 -22.01 Q148.97 -19.80 148.97 -16.75 L148.97 -16.72 Q148.97 -13.70 149.92 -11.49 Q150.88 -9.28 152.55 -8.08 Q154.22 -6.88 156.44 -6.88 Z"></path>
+                        </g>
+                        <text class="tag" x="35.7" y="295" text-anchor="start" fill="#8E8E93" style="opacity:.85;font-family:Nunito,sans-serif;font-weight:600;font-size:7.9px;letter-spacing:.50px;">Trusted Sources. Real Decisions.</text>
+                        <path class="zhot" d="M73.47 -0.00 L73.47 -5.19 L90.31 -26.45 L90.31 -26.62 L73.73 -26.62 L73.73 -33.50 L100.75 -33.50 L100.75 -27.72 L84.92 -7.05 L84.92 -6.88 L101.14 -6.88 L101.14 -0.00 Z" transform="translate(32.95 285)" fill="url(#zzHotGrad)" style="opacity:.5;filter:drop-shadow(0 0 3px rgba(255,160,40,.75)) drop-shadow(0 0 9px rgba(255,120,15,.45));animation:zzEmber 3.2s ease-in-out infinite;"></path>
+                        <circle class="zimpact" cx="120.3" cy="251.5" r="15" fill="url(#zzSpk)" style="opacity:0;transform-box:fill-box;transform-origin:center;"></circle>
+                    </g>
+                </svg>
+            </div>
             <h1 class="sr-only">Zzzap</h1>
             <p class="sr-only">Trusted Sources. Real Decisions.</p>
         </header>
@@ -92,5 +175,7 @@
             <p class="copyright">&copy; 2026 Rhapsy LLC. All rights reserved.</p>
         </footer>
     </div>
+
+    <script src="assets/logo-animation.js" defer></script>
 </body>
 </html>

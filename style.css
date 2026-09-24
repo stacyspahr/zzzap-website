@@ -23,12 +23,7 @@ header {
     margin-bottom: 48px;
 }
 
-.wordmark {
-    width: 360px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-}
+/* The header lockup is now the animated SVG — see assets/logo-animation.css. */
 
 /* Visually hide text while keeping it available for screen readers and SEO. */
 .sr-only {
@@ -223,7 +218,6 @@ footer nav a:hover {
 }
 
 @media (max-width: 480px) {
-    .wordmark { width: 260px; }
     .hero p { font-size: 16px; }
     .hero .hero-lead { font-size: 22px; }
     .duo-title { font-size: 20px; }
