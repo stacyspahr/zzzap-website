@@ -141,14 +141,10 @@ header {
 }
 
 
-.badge img {
-    height: 48px;
-    transition: opacity 0.2s;
-}
-
-.badge img:hover {
-    opacity: 0.8;
-}
+/* No .badge element exists in the markup — these rules were dead. Removed
+   rather than wired up, because fading the App Store badge on hover is the
+   same "don't modify the badge" violation as the 0.4 opacity that used to
+   sit on it inline. The badge is sized by its height attribute instead. */
 
 .coming-soon-wrap {
     display: inline-block;
