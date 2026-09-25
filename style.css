@@ -151,14 +151,6 @@ header {
     position: relative;
 }
 
-.coming-soon {
-    font-size: 32px;
-    font-weight: 900;
-    color: #ff3b30 !important;
-    letter-spacing: 4px;
-    margin-bottom: 12px;
-}
-
 .features {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
