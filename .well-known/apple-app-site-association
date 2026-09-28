@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["XK9K77G62A.spahr.zap"],
+        "components": [
+          { "/": "/invite/*", "comment": "Invite links: open the app and connect both people" },
+          { "/": "/u/*", "comment": "Profile codes (the QR): open that person's profile" }
+        ]
+      }
+    ]
+  }
+}

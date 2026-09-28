@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zzzap</title>
+    <!-- GitHub Pages serves this file for every path that has no page of its
+         own. Two of those are ours on purpose: /invite/<token> and /u/<code>
+         (see the app repo's BACKLOG, "Invite links + profile QR"). With Zzzap
+         installed, iOS opens the app and this page never loads; people only
+         land here without the app, or on a version older than 1.0.2.
+         All asset paths are absolute because the page is served from
+         /invite/... and /u/..., where relative paths would break. -->
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="apple-touch-icon" href="/assets/icons/Icon-60@3x.png">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .landing { text-align: center; margin-bottom: 64px; }
+        .landing .mark { width: 96px; height: 96px; border-radius: 22px; margin: 24px auto 32px; display: block; }
+        .landing h2 { font-size: 26px; font-weight: 600; margin-bottom: 12px; }
+        .landing .lead { font-size: 18px; color: #ccc; max-width: 440px; margin: 0 auto 32px; }
+        .landing .hint { font-size: 14px; color: #999; max-width: 400px; margin: 24px auto 0; }
+        .landing .hint + .hint { margin-top: 8px; }
+        .back { display: inline-block; color: #f5c518; text-decoration: none; font-size: 14px; margin-top: 16px; }
+        /* Only one of the three blocks is shown; the script picks it. The
+           not-found block is the no-script default. */
+        [data-view="invite"], [data-view="profile"] { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="landing">
+            <img class="mark" src="/assets/icons/Icon-1024@1x.png" alt="Zzzap">
+
+            <div data-view="invite">
+                <h2>You've been invited to Zzzap</h2>
+                <p class="lead">Get the app and you'll be connected with the friend who sent this, so you can start answering each other's zzzaps.</p>
+            </div>
+
+            <div data-view="profile">
+                <h2>Someone shared their Zzzap profile</h2>
+                <p class="lead">Get the app to see their profile and follow them.</p>
+            </div>
+
+            <div data-view="invite profile" class="get" hidden>
+                <!-- Official badge, unmodified (Apple: "Don't modify, angle, or
+                     animate the App Store badge"). Tapping it copies this link
+                     first: after installing, Zzzap offers a Paste button that
+                     picks the invite back up. Browsers only allow copying on a
+                     tap, which is why it happens here and not on page load. -->
+                <a id="get-zzzap" href="https://apps.apple.com/app/id6761918562">
+                    <img src="/assets/marketing/download-on-the-app-store.svg" alt="Download on the App Store" height="48">
+                </a>
+                <p class="hint">Already have Zzzap? Tap your link again and it will open in the app.</p>
+                <p class="hint">Have Zzzap but it didn't open? Update to the latest version from the App Store.</p>
+            </div>
+
+            <div data-view="notfound">
+                <h2>This page doesn't exist</h2>
+                <p class="lead">The link may be mistyped, or the page may have moved.</p>
+                <a href="/" class="back">&larr; Back to Zzzap</a>
+            </div>
+        </div>
+
+        <footer>
+            <nav>
+                <a href="/privacy.html">Privacy Policy</a>
+                <a href="/terms.html">Terms of Service</a>
+                <a href="/guidelines.html">Community Guidelines</a>
+                <a href="mailto:support@zzzap-app.com">Support</a>
+            </nav>
+            <p class="copyright">&copy; 2026 Rhapsy LLC. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Same shape the app accepts (InviteLink.swift): /invite/<token> or
+        // /u/<code>, base64url characters, at most 64, optional trailing slash.
+        (function () {
+            var match = location.pathname.match(/^\/(invite|u)\/([A-Za-z0-9_-]{1,64})\/?$/i);
+            if (!match) return; // stays on the not-found view
+
+            var view = match[1].toLowerCase() === "invite" ? "invite" : "profile";
+            var link = "https://zzzap-app.com/" + (view === "invite" ? "invite" : "u") + "/" + match[2];
+
+            document.querySelector('[data-view="notfound"]').style.display = "none";
+            document.querySelector('[data-view="' + view + '"]').style.display = "block";
+            document.querySelector(".get").hidden = false;
+            document.title = view === "invite" ? "You've been invited to Zzzap" : "Zzzap";
+
+            // Copy, then go. If copying isn't allowed or fails, still go:
+            // the person just won't get the paste card, and "tap your link
+            // again" still works once the app is installed.
+            var button = document.getElementById("get-zzzap");
+            button.addEventListener("click", function (event) {
+                if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+                event.preventDefault();
+                var go = function () { location.href = button.href; };
+                navigator.clipboard.writeText(link).then(go, go);
+            });
+        })();
+    </script>
+</body>
+</html>
