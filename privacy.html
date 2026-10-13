@@ -34,7 +34,7 @@
                 <li><strong>Account information:</strong> When you sign in with Apple, we receive your Apple ID identifier and, if you choose to share it, your email address and display name. If you use Apple's Hide My Email, we receive the relay address rather than your real one, and that works fine. We use the address for one purpose only: delivering your data export if you request one. It is not used to sign you in, never used to find you in search, and never shown to other users. You may also add a real name and phone number to your profile.</li>
                 <li><strong>Browsing before sign-in:</strong> You can explore Zzzap before creating an account. During that time the app uses a temporary anonymous identifier. If you later sign in with Apple, your anonymous activity is merged into your account. Anonymous sessions that never sign in may be deleted after a period of inactivity.</li>
                 <li><strong>Profile photo:</strong> If you upload a profile photo, it is stored on our servers (Firebase Storage).</li>
-                <li><strong>Zzzap data:</strong> Questions, answer options, votes, recipient lists, and photos you include in photo zzzaps are stored on our servers (Firebase) to deliver the experience.</li>
+                <li><strong>Zzzap data:</strong> Questions, answer options, votes, comments, recipient lists, and photos you include in photo zzzaps are stored on our servers (Firebase) to deliver the experience.</li>
                 <li><strong>Social connections:</strong> Your follower and following relationships, circles, and nicknames you set for friends and circles are stored to power the app's social features.</li>
                 <li><strong>Push notification tokens:</strong> We store your device token to send you notifications about zzzaps you've received or created.</li>
                 <li><strong>Searchability:</strong> You control whether other users can find you by name or phone number, and you can turn discoverability off at any time in Profile &rarr; Privacy. Your real name and phone number are never displayed on your profile; they are used to help friends find you in search. Other users see only your display name and profile photo. Phone numbers are matched using hashed values. Your email address is never used to find you.</li>
@@ -44,6 +44,10 @@
 
             <h3>Photo Zzzaps</h3>
             <p>When you create a photo zzzap, the images you select are uploaded to our servers (Firebase Storage) and delivered to the recipients of that zzzap. Photos are only visible to the zzzap creator and recipients. They are never publicly accessible or discoverable.</p>
+
+            <h3>Votes and Comments</h3>
+            <p>On most zzzaps, the app does not show anyone how you voted. Everyone sees the totals. Comments appear without your name or photo, to the creator and to other voters alike. The exception is an Open Ballot: the creator can see how you voted and which comment is yours, and the app tells you before you vote. In a very small zzzap, people may still be able to guess who wrote something.</p>
+            <p>If you hide a comment or mute a commenter, that choice is stored privately with your account. No one else can see it, and the person is never told. If a comment is reported, our team can see which account wrote it so we can review the report.</p>
 
             <h3>Content Moderation</h3>
             <p>To keep Zzzap safe for everyone, images in photo zzzaps are automatically screened for inappropriate content using Google Cloud Vision API before they are delivered to recipients. Google processes the image to return a safety assessment. No images are retained by Google after processing. Images that are flagged as unsafe may be blocked from delivery. We may also review reported content manually. No human reviews your photos unless another user reports the content.</p>
@@ -76,7 +80,7 @@
             <p>Your data is stored on Google Firebase servers in the United States. We use industry-standard security measures including encrypted connections (TLS) and Firebase Security Rules to protect your data.</p>
 
             <h3>Data Retention</h3>
-            <p>Zzzap data (questions, options, votes, and recipients) remains stored on our servers after a zzzap closes. The app's feed shows the most recent 7 days; older zzzaps no longer appear in the app but are retained on our servers for record-keeping and support purposes. You can delete your account at any time, which removes all associated data from our servers.</p>
+            <p>Zzzap data (questions, options, votes, comments, and recipients) remains stored on our servers after a zzzap closes. The app's feed shows the most recent 7 days; older zzzaps no longer appear in the app but are retained on our servers for record-keeping and support purposes. You can delete your account at any time, which removes all associated data from our servers.</p>
 
             <h3>Face ID</h3>
             <p>If you turn on Face ID protection for private zzzaps, authentication happens entirely on your device through Apple's Face ID system. We never receive or store any biometric data.</p>
