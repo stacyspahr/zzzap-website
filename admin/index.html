@@ -372,6 +372,17 @@
         }
 
         .hidden { display: none; }
+        /* Surge card (surge.js) */
+        .surge-h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: #999; margin: 22px 0 10px; }
+        .surge-muted { color: #666; font-size: 13px; }
+        .surge-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid #222; flex-wrap: wrap; }
+        .surge-name { color: #fff; font-weight: 600; font-size: 14px; }
+        .surge-meta { color: #888; font-size: 12px; margin-top: 3px; }
+        .surge-actions { display: flex; gap: 8px; align-items: center; }
+        .surge-actions select { width: auto; }
+        .surge-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .surge-chip { background: rgba(245,197,24,.15); color: #f5c518; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; }
+        .surge-add-row { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -523,6 +534,27 @@
                 <h2>Recent zzzaps</h2>
                 <div id="recent-list">
                     <p style="color:#666; font-size:13px;">Loading…</p>
+                </div>
+            </div>
+            <!-- Surge: who's on it, invite someone, categories (surge.js) -->
+            <div class="card" id="surge-card">
+                <h2>Surge</h2>
+                <div id="surge-status" class="status-message"></div>
+
+                <h3 class="surge-h3">On Surge</h3>
+                <div id="surge-members"><p class="surge-muted">Loading…</p></div>
+
+                <h3 class="surge-h3">Invite to Surge</h3>
+                <div class="form-row">
+                    <input type="text" id="surge-search" placeholder="Search by name" autocomplete="off">
+                </div>
+                <div id="surge-results"></div>
+
+                <h3 class="surge-h3">Categories</h3>
+                <div id="surge-categories" class="surge-chips"></div>
+                <div class="form-row surge-add-row">
+                    <input type="text" id="surge-new-category" placeholder="New category, e.g. Fitness" autocomplete="off">
+                    <button type="button" id="surge-add-category" class="btn-secondary">Add</button>
                 </div>
             </div>
             </div> <!-- /right column -->
@@ -1763,5 +1795,6 @@
                 .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
         }
     </script>
+    <script type="module" src="surge.js"></script>
 </body>
 </html>
