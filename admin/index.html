@@ -393,6 +393,8 @@
         .surge-muted { color: #666; font-size: 13px; }
         .surge-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid #222; flex-wrap: wrap; }
         .surge-name { color: #fff; font-weight: 600; font-size: 14px; }
+        .surge-name-link { text-decoration: underline; text-decoration-color: #555; text-underline-offset: 3px; }
+        .surge-name-link:hover { color: #f5c518; text-decoration-color: #f5c518; }
         .surge-meta { color: #888; font-size: 12px; margin-top: 3px; }
         .surge-actions { display: flex; gap: 8px; align-items: center; }
         .surge-actions select { width: auto; }
@@ -1901,7 +1903,7 @@
             show(["send", "surge", "stats"].includes(fromHash) ? fromHash : (localStorage.getItem("adminTab") || "send"));
         })();
     </script>
-    <script type="module" src="surge.js"></script>
+    <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="stats.js?v=2"></script>
 </body>
 </html>

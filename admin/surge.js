@@ -114,7 +114,17 @@ async function loadMembers() {
 function memberRow(u) {
     const row = el("div", "surge-row");
     const info = el("div", "surge-info");
-    info.append(el("div", "surge-name", u.displayName || "Unnamed"));
+    // With a handle, the name opens their page (vote.zzzap-app.com/@handle) in a new tab.
+    if (u.handle) {
+        const link = el("a", "surge-name surge-name-link", u.displayName || "Unnamed");
+        link.href = `https://vote.zzzap-app.com/@${encodeURIComponent(u.handle)}`;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.title = "Open their page in a new tab";
+        info.append(link);
+    } else {
+        info.append(el("div", "surge-name", u.displayName || "Unnamed"));
+    }
     const handle = u.handle ? `@${u.handle}` : "No handle yet";
     const category = categoryNames[u.categoryId] || "No category";
     info.append(el("div", "surge-meta", `${handle} · ${category} · ${setupSummary(u)}`));
