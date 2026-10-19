@@ -480,7 +480,8 @@
                 <button type="submit" id="signin-btn" class="btn-primary" style="width: 100%; padding: 14px;">Sign in</button>
             </form>
             <div id="signin-error" class="status-message error"></div>
-            <p style="margin: 20px 0 0;"><a class="main-site-link" href="../">Back to the main site</a></p>
+            <p style="margin: 16px 0 0;"><a class="main-site-link" href="#" id="reset-password-link">Forgot or change password?</a></p>
+            <p style="margin: 12px 0 0;"><a class="main-site-link" href="../">Back to the main site</a></p>
         </div>
 
         <!-- Authed state -->
@@ -489,6 +490,7 @@
                 <div class="admin-title"><span class="bolt">⚡⚡</span>Zzzap Admin Console</div>
                 <div class="admin-identity">
                     <a class="main-site-link" href="../">Main site</a>
+                    <a class="main-site-link" href="#" id="change-password-link">Change password</a>
                     <strong id="user-name">—</strong>
                     <button id="signout-btn" class="btn-danger">Sign out</button>
                 </div>
@@ -716,7 +718,8 @@
         // Firebase Web SDK v10 (modular, ESM via CDN)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
         import {
-            getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
+            getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
+            sendPasswordResetEmail
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
             getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp,
@@ -777,6 +780,41 @@
         });
 
         signoutBtn.addEventListener("click", () => signOut(auth));
+
+        // Password change: Firebase emails a link to pick a new password.
+        // Firebase doesn't say whether an email has an account, so the
+        // message is the same either way.
+        async function sendReset(email) {
+            await sendPasswordResetEmail(auth, email);
+            return `If ${email} has an account, a link to set a new password is on its way. Check spam if it doesn't show up in a few minutes.`;
+        }
+
+        document.getElementById("reset-password-link").addEventListener("click", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("signin-email").value.trim();
+            signinError.className = "status-message error";
+            if (!email) {
+                signinError.textContent = "Type your email above first, then click this again.";
+                return;
+            }
+            try {
+                signinError.textContent = await sendReset(email);
+                signinError.className = "status-message success";
+            } catch (err) {
+                signinError.textContent = err.message;
+            }
+        });
+
+        document.getElementById("change-password-link").addEventListener("click", async (e) => {
+            e.preventDefault();
+            const email = auth.currentUser?.email;
+            if (!email) return;
+            try {
+                alert(await sendReset(email));
+            } catch (err) {
+                alert(`Couldn't send the email: ${err.message}`);
+            }
+        });
 
         let recentUnsub = null;
         let queueUnsub = null;
