@@ -124,6 +124,7 @@ function pitchPages() {
 function brandKit() {
     const parts = [heading("Brand files")];
     parts.push(el("p", "surge-muted mkt-intro", "Click a file to open it full size, or Download to save it."));
+    parts.push(...animatedLogo());
     for (const group of BRAND_GROUPS) {
         parts.push(el("div", "mkt-group-title", group.title));
         if (group.note) parts.push(el("p", "surge-muted mkt-group-note", group.note));
@@ -149,6 +150,26 @@ function brandKit() {
         parts.push(grid);
     }
     return parts;
+}
+
+// The main site's animated logo, playing live (assets/brand/animated-logo.html
+// borrows it from the main page, so it's always the same one).
+function animatedLogo() {
+    const url = BRAND + "animated-logo.html";
+    const frame = el("iframe", "mkt-anim");
+    frame.src = url;
+    frame.title = "Zzzap animated logo";
+    frame.loading = "lazy";
+    const open = el("a", "mkt-download", "Open full screen");
+    open.href = url;
+    open.target = "_blank";
+    open.rel = "noopener";
+    return [
+        el("div", "mkt-group-title", "Animated logo"),
+        el("p", "surge-muted mkt-group-note", "The same one as the top of zzzap-app.com. The lightning strikes again every several seconds. To make a video, open it full screen and screen record."),
+        frame,
+        open,
+    ];
 }
 
 function basics() {

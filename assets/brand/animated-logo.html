@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Zzzap animated logo</title>
+    <!-- The main site's animated logo on its own, for the admin Marketing tab
+         and for screen recording. It borrows the logo straight from the main
+         page (../../index.html) and runs the same animation files, so there's
+         only ever one copy: change it on the main site and this follows. -->
+    <link rel="stylesheet" href="../logo-animation.css">
+    <style>
+        html, body { margin: 0; height: 100%; background: #000; }
+        body { display: grid; place-items: center; overflow: hidden; }
+        .logo-stage .logo { height: min(72vh, 78vw); }
+    </style>
+</head>
+<body>
+    <script>
+        fetch("../../index.html")
+            .then(r => r.text())
+            .then(html => {
+                const logo = new DOMParser().parseFromString(html, "text/html").getElementById("zzzap-logo");
+                if (!logo) return;
+                document.body.append(logo);
+                const script = document.createElement("script");
+                script.src = "../logo-animation.js";
+                document.body.append(script);
+            });
+    </script>
+</body>
+</html>
