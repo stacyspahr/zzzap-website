@@ -107,6 +107,30 @@ function heading(text) {
 }
 
 // ---------- Sections ----------
+// Each section folds open and closed so the logos don't take over the page.
+// Which ones are open is remembered in this browser.
+
+const OPEN_KEY = "marketingOpenSections";
+const openSections = new Set(JSON.parse(localStorage.getItem(OPEN_KEY) || '["pitch"]'));
+
+function section(id, title, summary, content, onFirstOpen) {
+    const box = el("details", "mkt-section");
+    box.open = openSections.has(id);
+    const head = el("summary", "mkt-summary");
+    head.append(el("span", "mkt-summary-title", title), el("span", "mkt-summary-count", summary));
+    const body = el("div", "mkt-section-body");
+    body.append(...content);
+    box.append(head, body);
+    let started = false;
+    const start = () => { if (box.open && !started && onFirstOpen) { started = true; onFirstOpen(); } };
+    box.addEventListener("toggle", () => {
+        box.open ? openSections.add(id) : openSections.delete(id);
+        localStorage.setItem(OPEN_KEY, JSON.stringify([...openSections]));
+        start();
+    });
+    start();
+    return box;
+}
 
 function pitchPages() {
     const list = el("div", "mkt-links");
@@ -118,58 +142,58 @@ function pitchPages() {
         link.append(el("div", "surge-name", page.name), el("div", "surge-meta", page.note));
         list.append(link);
     }
-    return [heading("Surge pitch pages"), list];
+    return section("pitch", "Surge pitch pages", `${PITCH_PAGES.length} pages`, [list]);
 }
 
-function brandKit() {
-    const parts = [heading("Brand files")];
-    parts.push(el("p", "surge-muted mkt-intro", "Click a file to open it full size, or Download to save it."));
-    parts.push(...animatedLogo());
-    for (const group of BRAND_GROUPS) {
-        parts.push(el("div", "mkt-group-title", group.title));
-        if (group.note) parts.push(el("p", "surge-muted mkt-group-note", group.note));
-        const grid = el("div", "mkt-grid");
-        for (const item of group.files) {
-            const url = BRAND + item.file;
-            const tile = el("div", "mkt-tile");
-            const view = el("a", item.light ? "mkt-thumb mkt-thumb-light" : "mkt-thumb");
-            view.href = url;
-            view.target = "_blank";
-            view.rel = "noopener";
-            const img = el("img");
-            img.src = url;
-            img.alt = item.label;
-            img.loading = "lazy";
-            view.append(img);
-            const save = el("a", "mkt-download", "Download");
-            save.href = url;
-            save.download = item.file.split("/").pop();
-            tile.append(view, el("div", "mkt-label", item.label), save);
-            grid.append(tile);
-        }
-        parts.push(grid);
+function fileGrid(files) {
+    const grid = el("div", "mkt-grid");
+    for (const item of files) {
+        const url = BRAND + item.file;
+        const tile = el("div", "mkt-tile");
+        const view = el("a", item.light ? "mkt-thumb mkt-thumb-light" : "mkt-thumb");
+        view.href = url;
+        view.target = "_blank";
+        view.rel = "noopener";
+        const img = el("img");
+        img.src = url;
+        img.alt = item.label;
+        img.loading = "lazy";
+        view.append(img);
+        const save = el("a", "mkt-download", "Download");
+        save.href = url;
+        save.download = item.file.split("/").pop();
+        tile.append(view, el("div", "mkt-label", item.label), save);
+        grid.append(tile);
     }
-    return parts;
+    return grid;
+}
+
+function brandGroups() {
+    return BRAND_GROUPS.map((group, i) => {
+        const content = [];
+        if (group.note) content.push(el("p", "surge-muted mkt-group-note", group.note));
+        content.push(fileGrid(group.files));
+        const count = `${group.files.length} ${group.files.length === 1 ? "file" : "files"}`;
+        return section(`brand-${i}`, group.title, count, content);
+    });
 }
 
 // The main site's animated logo, playing live (assets/brand/animated-logo.html
-// borrows it from the main page, so it's always the same one).
+// borrows it from the main page, so it's always the same one). It only loads
+// once the section is opened.
 function animatedLogo() {
     const url = BRAND + "animated-logo.html";
     const frame = el("iframe", "mkt-anim");
-    frame.src = url;
     frame.title = "Zzzap animated logo";
-    frame.loading = "lazy";
     const open = el("a", "mkt-download", "Open full screen");
     open.href = url;
     open.target = "_blank";
     open.rel = "noopener";
-    return [
-        el("div", "mkt-group-title", "Animated logo"),
+    return section("animated", "Animated logo", "Plays live", [
         el("p", "surge-muted mkt-group-note", "The same one as the top of zzzap-app.com. The lightning strikes again every several seconds. To make a video, open it full screen and screen record."),
         frame,
         open,
-    ];
+    ], () => { frame.src = url; });
 }
 
 function basics() {
@@ -179,13 +203,13 @@ function basics() {
         row.append(el("div", "mkt-basic-label", label), el("div", "mkt-basic-text", text));
         list.append(row);
     }
-    return [heading("Brand basics"), list];
+    return section("basics", "Brand basics", "Name, tagline, colors, links", [list]);
 }
 
 function wording() {
     const list = el("ul", "mkt-rules");
     WORDING.forEach(rule => list.append(el("li", "", rule)));
-    return [heading("Wording rules"), list];
+    return section("wording", "Wording rules", `${WORDING.length} rules`, [list]);
 }
 
 function comingSoon() {
@@ -197,14 +221,19 @@ function comingSoon() {
         box.append(head, el("div", "stat-detail mkt-coming-detail", item.detail), el("div", "stat-needs", `Needs: ${item.needs}`));
         grid.append(box);
     }
-    return [heading("Coming later"), grid];
+    return section("coming", "Coming later", `${COMING.length} ideas`, [grid]);
 }
 
 document.getElementById("marketing-card").replaceChildren(
     el("p", "surge-muted mkt-public-note", "Everything on this tab is public. Anyone who finds a file’s link can open it, so keep private information off it."),
-    ...pitchPages(),
-    ...brandKit(),
-    ...basics(),
-    ...wording(),
-    ...comingSoon(),
+    heading("Pitching"),
+    pitchPages(),
+    heading("Brand files"),
+    animatedLogo(),
+    ...brandGroups(),
+    heading("Guidelines"),
+    basics(),
+    wording(),
+    heading("Later"),
+    comingSoon(),
 );

@@ -461,6 +461,17 @@
         .mkt-basic-text { color: #ddd; font-size: 14px; line-height: 1.45; word-break: break-word; }
         .mkt-rules { margin: 0; padding-left: 20px; color: #ddd; font-size: 14px; line-height: 1.6; }
         .mkt-coming-detail { margin-top: 6px; }
+        .mkt-section { background: #161616; border: 1px solid #222; border-radius: 12px; margin-bottom: 8px; }
+        .mkt-section[open] { border-color: #333; }
+        .mkt-summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 13px 16px; }
+        .mkt-summary::-webkit-details-marker { display: none; }
+        .mkt-summary::before { content: "›"; color: #777; font-size: 18px; line-height: 1; width: 10px; transition: transform 0.15s; }
+        .mkt-section[open] > .mkt-summary::before { transform: rotate(90deg); }
+        .mkt-summary:hover .mkt-summary-title { color: #f5c518; }
+        .mkt-summary-title { color: #fff; font-weight: 600; font-size: 14px; flex: 1; }
+        .mkt-summary-count { color: #777; font-size: 12px; }
+        .mkt-section-body { padding: 0 16px 16px; }
+        .mkt-section-body .mkt-tile, .mkt-section-body .mkt-link, .mkt-section-body .stat-box { background: #111; }
         .mkt-anim { display: block; width: 100%; height: 340px; border: 1px solid #222; border-radius: 12px; background: #000; margin-bottom: 8px; }
     </style>
 </head>
@@ -2013,6 +2024,6 @@
     </script>
     <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="stats.js?v=2"></script>
-    <script type="module" src="marketing.js?v=2"></script>
+    <script type="module" src="marketing.js?v=3"></script>
 </body>
 </html>
