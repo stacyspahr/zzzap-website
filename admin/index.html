@@ -399,6 +399,22 @@
         .surge-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
         .surge-chip { background: rgba(245,197,24,.15); color: #f5c518; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; }
         .surge-add-row { display: flex; gap: 8px; }
+
+        /* Stats tab (stats.js) */
+        .stats-panel-card { max-width: 760px; }
+        .stats-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .stats-top .status-message { margin: 0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+        .stat-box { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 14px 16px; }
+        .stat-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .stat-title { color: #999; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { color: #f5c518; font-size: 28px; font-weight: 700; margin: 6px 0 4px; font-variant-numeric: tabular-nums; }
+        .stat-detail { color: #888; font-size: 12px; line-height: 1.4; }
+        .stat-sample { border-style: dashed; }
+        .stat-sample .stat-value { color: #555; }
+        .stat-sample .stat-detail { color: #555; }
+        .stat-tag { color: #777; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #333; border-radius: 100px; padding: 2px 8px; }
+        .stat-needs { color: #777; font-size: 11px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #222; }
     </style>
 </head>
 <body>
@@ -434,6 +450,7 @@
             <div class="admin-tabs" role="tablist">
                 <button type="button" class="admin-tab" role="tab" data-tab="send">Send</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="stats">Stats</button>
             </div>
 
             <div class="admin-panel" data-panel="send">
@@ -585,6 +602,23 @@
                 </div>
             </div>
             </div> <!-- /surge panel -->
+
+            <div class="admin-panel" data-panel="stats" hidden>
+            <!-- Stats: totals only, never names (stats.js) -->
+            <div class="card stats-panel-card">
+                <div class="stats-top">
+                    <div id="stats-status" class="status-message"></div>
+                    <button type="button" id="stats-refresh" class="btn-secondary">Refresh</button>
+                </div>
+
+                <h3 class="surge-h3">Live</h3>
+                <div id="stats-live" class="stats-grid"></div>
+
+                <h3 class="surge-h3">Not live yet</h3>
+                <p class="surge-muted" style="margin-bottom: 12px;">Sample numbers, made up. Each box says what it needs.</p>
+                <div id="stats-sample" class="stats-grid"></div>
+            </div>
+            </div> <!-- /stats panel -->
         </div>
     </div>
 
@@ -1837,9 +1871,10 @@
             }
             tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.tab)));
             const fromHash = location.hash.replace("#", "");
-            show(["send", "surge"].includes(fromHash) ? fromHash : (localStorage.getItem("adminTab") || "send"));
+            show(["send", "surge", "stats"].includes(fromHash) ? fromHash : (localStorage.getItem("adminTab") || "send"));
         })();
     </script>
     <script type="module" src="surge.js"></script>
+    <script type="module" src="stats.js"></script>
 </body>
 </html>
