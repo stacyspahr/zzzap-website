@@ -372,8 +372,24 @@
         }
 
         .hidden { display: none; }
+        /* Tabs (Send / Surge), segmented-control style */
+        .admin-tabs {
+            display: inline-flex; gap: 4px; padding: 4px;
+            background: #161616; border: 1px solid #222; border-radius: 12px;
+            margin: 4px 0 24px;
+        }
+        .admin-tab {
+            background: transparent; border: none; color: #aaa;
+            font-size: 14px; font-weight: 600; padding: 8px 22px; border-radius: 9px;
+            cursor: pointer;
+        }
+        .admin-tab:hover { color: #fff; }
+        .admin-tab.active { background: #f5c518; color: #111; }
+        .surge-panel-card { max-width: 760px; }
+
         /* Surge card (surge.js) */
         .surge-h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: #999; margin: 22px 0 10px; }
+        .surge-panel-card .surge-h3:first-of-type { margin-top: 0; }
         .surge-muted { color: #666; font-size: 13px; }
         .surge-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid #222; flex-wrap: wrap; }
         .surge-name { color: #fff; font-weight: 600; font-size: 14px; }
@@ -414,6 +430,13 @@
                 </div>
             </div>
 
+            <!-- Tabs: Send (Zzzap Official) and Surge. Remembered per browser. -->
+            <div class="admin-tabs" role="tablist">
+                <button type="button" class="admin-tab" role="tab" data-tab="send">Send</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
+            </div>
+
+            <div class="admin-panel" data-panel="send">
             <div class="admin-grid">
 
             <!-- Templates sidebar -->
@@ -536,9 +559,13 @@
                     <p style="color:#666; font-size:13px;">Loading…</p>
                 </div>
             </div>
+            </div> <!-- /right column -->
+            </div> <!-- /admin-grid -->
+            </div> <!-- /send panel -->
+
+            <div class="admin-panel" data-panel="surge" hidden>
             <!-- Surge: who's on it, invite someone, categories (surge.js) -->
-            <div class="card" id="surge-card">
-                <h2>Surge</h2>
+            <div class="card surge-panel-card" id="surge-card">
                 <div id="surge-status" class="status-message"></div>
 
                 <h3 class="surge-h3">On Surge</h3>
@@ -557,8 +584,7 @@
                     <button type="button" id="surge-add-category" class="btn-secondary">Add</button>
                 </div>
             </div>
-            </div> <!-- /right column -->
-            </div> <!-- /admin-grid -->
+            </div> <!-- /surge panel -->
         </div>
     </div>
 
@@ -1794,6 +1820,25 @@
                 .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
         }
+    </script>
+    <script>
+        // Tabs: show one panel, remember the choice (and allow #surge links).
+        (function () {
+            const tabs = document.querySelectorAll(".admin-tab");
+            const panels = document.querySelectorAll(".admin-panel");
+            function show(name) {
+                tabs.forEach(t => {
+                    const on = t.dataset.tab === name;
+                    t.classList.toggle("active", on);
+                    t.setAttribute("aria-selected", on ? "true" : "false");
+                });
+                panels.forEach(p => { p.hidden = p.dataset.panel !== name; });
+                localStorage.setItem("adminTab", name);
+            }
+            tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.tab)));
+            const fromHash = location.hash.replace("#", "");
+            show(["send", "surge"].includes(fromHash) ? fromHash : (localStorage.getItem("adminTab") || "send"));
+        })();
     </script>
     <script type="module" src="surge.js"></script>
 </body>
