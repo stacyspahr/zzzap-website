@@ -87,6 +87,9 @@
 
         .admin-identity { font-size: 13px; color: #999; }
         .admin-identity strong { color: #fff; }
+        .main-site-link { color: #999; font-size: 13px; text-decoration: none; margin-right: 16px; }
+        .signin-card .main-site-link { margin-right: 0; }
+        .main-site-link:hover { color: #f5c518; }
 
         button {
             font-family: inherit;
@@ -452,6 +455,7 @@
                 <button type="submit" id="signin-btn" class="btn-primary" style="width: 100%; padding: 14px;">Sign in</button>
             </form>
             <div id="signin-error" class="status-message error"></div>
+            <p style="margin: 20px 0 0;"><a class="main-site-link" href="../">Back to the main site</a></p>
         </div>
 
         <!-- Authed state -->
@@ -459,6 +463,7 @@
             <div class="admin-header">
                 <div class="admin-title"><span class="bolt">⚡⚡</span>Zzzap Admin Console</div>
                 <div class="admin-identity">
+                    <a class="main-site-link" href="../">Main site</a>
                     <strong id="user-name">—</strong>
                     <button id="signout-btn" class="btn-danger">Sign out</button>
                 </div>
