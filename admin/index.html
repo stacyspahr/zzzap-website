@@ -407,10 +407,10 @@
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
         .stat-box { display: block; width: 100%; text-align: left; font-weight: 400; background: #161616; border: 1px solid #222; border-radius: 12px; padding: 14px 16px; transition: border-color 0.15s; }
         .stat-box:hover { border-color: #f5c518; }
-        .stat-box:hover .stat-info { color: #f5c518; }
         .stat-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
         .stat-tags { display: flex; gap: 6px; align-items: center; }
-        .stat-info { color: #777; font-size: 11px; font-weight: 600; }
+        .stat-info { color: #f5c518; background: rgba(245,197,24,.15); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+        .stat-box:hover .stat-info { background: #f5c518; color: #111; }
         .stat-title { color: #999; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-value { color: #f5c518; font-size: 28px; font-weight: 700; margin: 6px 0 4px; font-variant-numeric: tabular-nums; }
         .stat-detail { color: #888; font-size: 12px; line-height: 1.4; }
@@ -1902,6 +1902,6 @@
         })();
     </script>
     <script type="module" src="surge.js"></script>
-    <script type="module" src="stats.js"></script>
+    <script type="module" src="stats.js?v=2"></script>
 </body>
 </html>
