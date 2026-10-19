@@ -212,6 +212,17 @@ footer nav a:hover {
     color: #555;
 }
 
+/* Small, quiet link to the admin console (sign-in required there) */
+.admin-link {
+    color: #555;
+    text-decoration: none;
+    margin-left: 8px;
+}
+
+.admin-link:hover {
+    color: #f5c518;
+}
+
 @media (max-width: 480px) {
     .hero p { font-size: 16px; }
     .hero .hero-lead { font-size: 22px; }
