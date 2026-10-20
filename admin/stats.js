@@ -10,7 +10,8 @@
 import { getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import {
-    getFirestore, collection, query, where, getDocs, Timestamp
+    getFirestore, collection, query, where, getDocs, Timestamp,
+    orderBy, limit, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 const app = getApp();
@@ -30,7 +31,24 @@ const els = {
     infoTitle: document.getElementById("stats-info-title"),
     infoBody: document.getElementById("stats-info-body"),
     infoClose: document.getElementById("stats-info-close"),
+    tab: document.querySelector('.admin-tab[data-tab="stats"]'),
+    socialDue: document.getElementById("social-due"),
+    socialBoxes: document.getElementById("social-boxes"),
+    socialForm: document.getElementById("social-form"),
+    socialSave: document.getElementById("social-save"),
+    socialStatus: document.getElementById("social-status"),
 };
+
+// Zzzap's own social accounts. Follower counts are typed in by hand on this
+// tab and saved to socialStats, one doc per update, so growth can be shown.
+// A count older than SOCIAL_STALE_DAYS is due: the box says so, a note shows
+// at the top of the tab, and the Stats tab gets a dot.
+const SOCIAL = [
+    { id: "instagram", name: "Instagram" },
+    { id: "tiktok", name: "TikTok" },
+    { id: "facebook", name: "Facebook" },
+];
+const SOCIAL_STALE_DAYS = 7;
 
 // Boxes that aren't live yet. Numbers are made up; `needs` says what's missing.
 const SAMPLE_BOXES = [
@@ -117,6 +135,16 @@ const INFO = {
     ],
 };
 
+// Same explanation for each social box, with the account's name filled in.
+for (const { name } of SOCIAL) {
+    INFO[name] = [
+        ["What it is", `How many followers Zzzap's ${name} account has, as of the last time someone typed it in.`],
+        ["Where the number comes from", `Typed in by hand with the boxes under Social followers. Open ${name}, look at the follower count on Zzzap's profile, type it in, and Save. Only fill in the accounts you checked; empty boxes are skipped.`],
+        ["When it's due", `After ${SOCIAL_STALE_DAYS} days without an update the box says Due, a note shows at the top of this tab, and the Stats tab gets a dot.`],
+        ["Good to know", "Every update is kept, so the change since the last update is real. Typed a wrong number? Just save the right one; the newest one is what shows."],
+    ];
+}
+
 let loaded = false;
 let loading = false;
 
@@ -130,13 +158,14 @@ function el(tag, className, text) {
 }
 
 // The whole box is a button that opens its explanation.
-function box({ title, value, detail, needs }) {
-    const card = el("button", needs ? "stat-box stat-sample" : "stat-box");
+function box({ title, value, detail, needs, due }) {
+    const card = el("button", needs ? "stat-box stat-sample" : due ? "stat-box stat-stale" : "stat-box");
     card.type = "button";
     const head = el("div", "stat-head");
     head.append(el("div", "stat-title", title));
     const tags = el("div", "stat-tags");
     if (needs) tags.append(el("span", "stat-tag", "Sample"));
+    if (due) tags.append(el("span", "stat-due", "Due"));
     tags.append(el("span", "stat-info", "Info"));
     head.append(tags);
     card.append(head, el("div", "stat-value", value));
@@ -259,6 +288,127 @@ function buildLiveBoxes(polls) {
     ];
 }
 
+// ---------- Social followers ----------
+
+function shortDate(date) {
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function daysAgo(date) {
+    const days = Math.floor((Date.now() - date.getTime()) / DAY);
+    if (days <= 0) return "today";
+    return days === 1 ? "yesterday" : `${days} days ago`;
+}
+
+// Newest entries first, so the first two per account are the latest and
+// the one before it.
+async function loadSocial() {
+    const snap = await getDocs(query(collection(db, "socialStats"), orderBy("enteredAt", "desc"), limit(200)));
+    const byPlatform = {};
+    for (const d of snap.docs) {
+        const { platform, followers } = d.data();
+        const at = toDate(d.data().enteredAt);
+        if (!at) continue;
+        (byPlatform[platform] ||= []).push({ followers, at });
+    }
+    return byPlatform;
+}
+
+function buildSocialBoxes(byPlatform) {
+    return SOCIAL.map(({ id, name }) => {
+        const [latest, previous] = byPlatform[id] || [];
+        if (!latest) {
+            return { title: name, value: "Not set", detail: "No count saved yet", due: true };
+        }
+        const due = Date.now() - latest.at.getTime() >= SOCIAL_STALE_DAYS * DAY;
+        let growth = "First count saved";
+        if (previous) {
+            const diff = latest.followers - previous.followers;
+            growth = diff === 0
+                ? `Same as ${shortDate(previous.at)}`
+                : `${diff > 0 ? "Up" : "Down"} ${Math.abs(diff).toLocaleString()} since ${shortDate(previous.at)}`;
+        }
+        return {
+            title: name,
+            value: latest.followers.toLocaleString(),
+            detail: `${growth}. Updated ${daysAgo(latest.at)}`,
+            due,
+        };
+    });
+}
+
+// Due note at the top of the tab, plus a dot on the Stats tab so it shows
+// from any tab.
+function showSocialDue(boxes) {
+    const due = boxes.filter(b => b.due).map(b => b.title);
+    els.socialDue.hidden = due.length === 0;
+    els.socialDue.textContent = due.length
+        ? `Time to update follower counts: ${due.join(", ")}. Type the new numbers under Social followers and Save.`
+        : "";
+    els.tab.querySelector(".tab-due")?.remove();
+    if (due.length) {
+        const dot = el("span", "tab-due");
+        dot.title = "Follower counts are due";
+        els.tab.append(dot);
+    }
+}
+
+async function refreshSocial() {
+    const boxes = buildSocialBoxes(await loadSocial());
+    els.socialBoxes.replaceChildren(...boxes.map(box));
+    showSocialDue(boxes);
+}
+
+function setSocialStatus(message, kind = "") {
+    els.socialStatus.textContent = message;
+    els.socialStatus.className = `status-message ${kind}`;
+}
+
+async function saveSocial(e) {
+    e.preventDefault();
+    const inputs = [...els.socialForm.querySelectorAll("input[data-platform]")];
+    const entries = [];
+    for (const input of inputs) {
+        // Allow "1,234" or "1 234"; anything else that isn't a whole number is a typo.
+        const raw = input.value.replace(/[,\s]/g, "");
+        if (!raw) continue;
+        if (!/^\d+$/.test(raw)) {
+            setSocialStatus(`${input.labels[0].textContent} needs a whole number, like 1250.`, "error");
+            input.focus();
+            return;
+        }
+        entries.push({ platform: input.dataset.platform, followers: Number(raw) });
+    }
+    if (!entries.length) {
+        setSocialStatus("Type at least one follower count first.", "error");
+        return;
+    }
+
+    els.socialSave.disabled = true;
+    setSocialStatus("Saving…");
+    try {
+        await Promise.all(entries.map(entry => addDoc(collection(db, "socialStats"), {
+            ...entry,
+            enteredAt: serverTimestamp(),
+            enteredBy: auth.currentUser.uid,
+        })));
+        inputs.forEach(input => { input.value = ""; });
+        await refreshSocial();
+        setSocialStatus(`Saved ${entries.length === 1 ? "1 count" : `${entries.length} counts`}.`, "success");
+    } catch (err) {
+        console.error("[STATS] social save", err);
+        setSocialStatus(`Couldn't save: ${err.message}`, "error");
+    } finally {
+        els.socialSave.disabled = false;
+    }
+}
+
+// Read once at sign-in so the due dot shows even before Stats is opened.
+// Marketing-only accounts can't read socialStats; they don't see Stats either.
+function loadSocialQuietly() {
+    refreshSocial().catch(err => console.warn("[STATS] social", err.message));
+}
+
 // ---------- Render ----------
 
 function renderSample() {
@@ -273,6 +423,7 @@ async function load() {
     try {
         const polls = await loadZzzaps();
         els.live.replaceChildren(...buildLiveBoxes(polls).map(box));
+        loadSocialQuietly();
         loaded = true;
         const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
         setStatus(`Updated ${time}. ${polls.length} zzzaps in the last 30 days.`);
@@ -292,16 +443,21 @@ function loadIfShowing() {
 
 renderSample();
 els.refresh.addEventListener("click", load);
+els.socialForm.addEventListener("submit", saveSocial);
 els.infoClose.addEventListener("click", () => els.infoDialog.close());
 // Clicking the dimmed area outside the box closes it too.
 els.infoDialog.addEventListener("click", e => { if (e.target === els.infoDialog) els.infoDialog.close(); });
 document.querySelectorAll(".admin-tab").forEach(t => t.addEventListener("click", () => setTimeout(loadIfShowing)));
 onAuthStateChanged(auth, user => {
     if (user) {
+        loadSocialQuietly();
         loadIfShowing();
     } else {
         loaded = false;
         els.live.replaceChildren();
+        els.socialBoxes.replaceChildren();
+        showSocialDue([]);
         setStatus("");
+        setSocialStatus("");
     }
 });
