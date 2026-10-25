@@ -5,7 +5,8 @@
         "appIDs": ["XK9K77G62A.spahr.zap"],
         "components": [
           { "/": "/invite/*", "comment": "Invite links: open the app and connect both people" },
-          { "/": "/u/*", "comment": "Profile codes (the QR): open that person's profile" }
+          { "/": "/u/*", "comment": "Profile codes (the QR): open that person's profile" },
+          { "/": "/@*", "comment": "Surge pages (the web page's Open in the app link): open that Surge profile" }
         ]
       }
     ]

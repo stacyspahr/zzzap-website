@@ -54,6 +54,8 @@
                 </a>
                 <p class="hint">Already have Zzzap? Tap your link again and it will open in the app.</p>
                 <p class="hint">Have Zzzap but it didn't open? Update to the latest version from the App Store.</p>
+                <!-- Only for /@handle, reached from a Surge page's "Open in the app". -->
+                <a id="back-to-page" class="back" style="display: none">Back to their page</a>
             </div>
 
             <div data-view="notfound">
@@ -77,12 +79,23 @@
     <script>
         // Same shape the app accepts (InviteLink.swift): /invite/<token> or
         // /u/<code>, base64url characters, at most 64, optional trailing slash.
+        // Also /@handle: a Surge page's "Open in the app" link. With the app
+        // it never lands here; without it, this is the profile view, and the
+        // copied link is the Surge page so the app can open it after install.
         (function () {
             var match = location.pathname.match(/^\/(invite|u)\/([A-Za-z0-9_-]{1,64})\/?$/i);
-            if (!match) return; // stays on the not-found view
+            var surge = location.pathname.match(/^\/@([a-z0-9_.]{3,20})\/?$/i);
+            if (!match && !surge) return; // stays on the not-found view
 
-            var view = match[1].toLowerCase() === "invite" ? "invite" : "profile";
-            var link = "https://zzzap-app.com/" + (view === "invite" ? "invite" : "u") + "/" + match[2];
+            var view = match && match[1].toLowerCase() === "invite" ? "invite" : "profile";
+            var link = surge
+                ? "https://vote.zzzap-app.com/@" + surge[1].toLowerCase()
+                : "https://zzzap-app.com/" + (view === "invite" ? "invite" : "u") + "/" + match[2];
+            if (surge) {
+                var back = document.getElementById("back-to-page");
+                back.href = link;
+                back.style.display = "inline-block";
+            }
 
             document.querySelector('[data-view="notfound"]').style.display = "none";
             document.querySelector('[data-view="' + view + '"]').style.display = "block";
