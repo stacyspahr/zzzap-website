@@ -367,7 +367,12 @@ async function save(action) {
             clearForm();
         }
     } catch (err) {
-        setStatus(serverNotReady(err) ? WAITING : `Couldn't ${action === "draft" ? "save" : "send"}: ${err.message}`, "error");
+        // The website login isn't the app login, so a test needs the
+        // admin's app account linked on their admins doc (appUid).
+        const notLinked = action === "test" && err.code === "functions/failed-precondition";
+        setStatus(serverNotReady(err) ? WAITING
+            : notLinked ? "Your app account isn't linked yet. Ask Zak to add it."
+            : `Couldn't ${action === "draft" ? "save" : "send"}: ${err.message}`, "error");
     } finally {
         els.testBtn.disabled = false;
         els.draftBtn.disabled = false;
