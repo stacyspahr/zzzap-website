@@ -55,7 +55,10 @@ const els = {
 const DEFAULT_BUTTON_WORDS = { "screen:feedback": "Send Feedback" };
 const ACTION_NAMES = {
     "tab:home": "Home tab", "tab:zzzaps": "Zzzaps tab", "tab:create": "New tab",
-    "tab:people": "People tab", "tab:me": "Me tab", "screen:feedback": "Send Feedback",
+    "tab:people": "People tab", "tab:me": "Me tab",
+    // Opens their Mail app straight to a General Feedback email to support@
+    // (no "What can we help with?" menu), with the usual no-Mail fallback.
+    "screen:feedback": "a feedback email to us",
 };
 
 let picked = new Map();       // uid -> name, for "Everyone except" / "Only"
@@ -523,7 +526,7 @@ function buttonFor() {
     if (!choice) return null;
     if (choice === "link") return "a web page";
     const name = ACTION_NAMES[choice];
-    return name.endsWith("tab") ? `the ${name}` : `the ${name} screen`;
+    return name.endsWith("tab") ? `the ${name}` : name;
 }
 
 function useVersion(option) {
