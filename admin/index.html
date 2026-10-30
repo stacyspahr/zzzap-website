@@ -600,7 +600,7 @@
                         <h2>Write a note</h2>
                         <button type="button" id="note-voice-btn" class="btn-secondary note-voice-btn">Zzzap Voice</button>
                     </div>
-                    <p class="surge-muted" style="margin: -8px 0 16px;">A card on Home under the status line. No push. People see it next time they open Zzzap, and it stays until they close it. One note or Official zzzap a week per person.</p>
+                    <p class="surge-muted" style="margin: -8px 0 16px;">A card on Home under the status line. No push. People see it next time they open Zzzap. It clears after they close it, tap its button, see it on 3 visits, or 7 days. One note or Official zzzap a week per person.</p>
                     <form id="note-form" autocomplete="off">
                         <div class="form-row">
                             <label for="note-draft">What do you want to say? <span class="note-count" data-for="note-draft"></span></label>
@@ -2264,7 +2264,7 @@
             show(localStorage.getItem("officialSection") === "zzzaps" ? "zzzaps" : "notes");
         })();
     </script>
-    <script type="module" src="notes.js?v=6"></script>
+    <script type="module" src="notes.js?v=7"></script>
     <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="stats.js?v=3"></script>
     <script type="module" src="marketing.js?v=4"></script>

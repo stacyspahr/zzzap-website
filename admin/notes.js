@@ -470,7 +470,8 @@ async function noteRow(id, n) {
         meta = [`Sent ${when} by ${by}`, `${c.delivered ?? 0} got it`,
             c.skipped ? `${c.skipped} skipped` : null,
             c.tapped !== undefined ? `${c.tapped} tapped` : null,
-            c.dismissed !== undefined ? `${c.dismissed} closed it` : null].filter(Boolean).join(" · ");
+            c.dismissed !== undefined ? `${c.dismissed} closed it` : null,
+            c.expired !== undefined ? `${c.expired} cleared on their own` : null].filter(Boolean).join(" · ");
     } else if (n.status === "scheduled") {
         const when = n.sendAt?.toDate ? formatWhen(n.sendAt.toDate()) : "";
         meta = `Scheduled for ${when} · ${audienceSummary(n.audience)} · by ${by}`;
