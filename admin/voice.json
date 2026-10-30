@@ -1,0 +1,280 @@
+{
+  "_about": "The Zzzap voice. One copy for everyone: people read it on the admin site (Marketing and Zzzap Official tabs), and Say It Like Zzzap feeds this same file to the AI. When the app adds, renames, or drops a term, update this file in the same change. Approved by Stacy 2026-10-30.",
+  "updated": "2026-10-30",
+  "personality": [
+    {
+      "trait": "A friend with good energy",
+      "detail": "Quick, warm, a little playful. Never corporate. Never \"We're excited to announce.\""
+    },
+    {
+      "trait": "Short",
+      "detail": "One idea per note. Short sentences, everyday words."
+    },
+    {
+      "trait": "About your people",
+      "detail": "Zzzap is fun when your people answer, so talk about them: your crew, your family, your team."
+    },
+    {
+      "trait": "Light on jokes",
+      "detail": "One wink at most. Never a pile of puns."
+    },
+    {
+      "trait": "Never pushy",
+      "detail": "No guilt, no fake urgency, no \"we miss you.\""
+    },
+    {
+      "trait": "House rules",
+      "detail": "No emoji. No long dashes (use a period or comma). Buttons in Title Case, like \"Try It.\""
+    }
+  ],
+  "terms": [
+    {
+      "say": "Zzzap",
+      "means": "The app and the team. Capital Z.",
+      "avoid": []
+    },
+    {
+      "say": "zzzap / zzzaps",
+      "means": "A question you send for your people to vote on. Lowercase in sentences, capitalized at the start of a button or title (\"Send Zzzap\"). Works as a verb: \"zzzap your crew.\"",
+      "avoid": [
+        "poll",
+        "survey",
+        "question post"
+      ]
+    },
+    {
+      "say": "Strike",
+      "means": "A quick decision: you write the options, people vote.",
+      "avoid": [
+        "multiple choice",
+        "regular poll"
+      ]
+    },
+    {
+      "say": "Storm",
+      "means": "An open question: people write in ideas, and matching answers stack up on a board.",
+      "avoid": [
+        "open poll",
+        "brainstorm poll",
+        "free text"
+      ]
+    },
+    {
+      "say": "Strike from this Storm",
+      "means": "A follow-up Strike built from a closed Storm's answers.",
+      "avoid": []
+    },
+    {
+      "say": "circle / circles",
+      "means": "A group of your followers, like Family or Work, you can send to in one tap. Lowercase in sentences, Title Case on buttons (\"New Circle\").",
+      "avoid": [
+        "group",
+        "list",
+        "channel"
+      ]
+    },
+    {
+      "say": "All Followers",
+      "means": "The circle made for you automatically: everyone who follows you.",
+      "avoid": []
+    },
+    {
+      "say": "smart circles",
+      "means": "Circles that keep themselves up to date: Mutuals, Usuals, Reliable, Active, Top Followers.",
+      "avoid": [
+        "auto groups"
+      ]
+    },
+    {
+      "say": "follow / Follow Back",
+      "means": "Following someone means you get their zzzaps. To send them yours, they follow you. Follow Back makes it two-way.",
+      "avoid": [
+        "friend request",
+        "connect",
+        "add friend"
+      ]
+    },
+    {
+      "say": "Power",
+      "means": "The paid plan: Open Ballot, photo zzzaps, tiebreakers, more circles, up to 100 people per zzzap. \"Upgrade to Power.\"",
+      "avoid": [
+        "premium",
+        "pro",
+        "tier",
+        "subscription tier"
+      ]
+    },
+    {
+      "say": "Spark",
+      "means": "The free plan. Rarely named. \"Free, for good\" is fine.",
+      "avoid": [
+        "free tier",
+        "basic",
+        "free forever"
+      ]
+    },
+    {
+      "say": "My Plan",
+      "means": "The plan screen, under Me.",
+      "avoid": []
+    },
+    {
+      "say": "free try / first one's on us",
+      "means": "One free use each of Open Ballot, photo zzzaps, and tiebreakers.",
+      "avoid": [
+        "trial",
+        "you've run out",
+        "last chance"
+      ]
+    },
+    {
+      "say": "Open Ballot",
+      "means": "The sender sees who voted for what. Voters are told before they vote.",
+      "avoid": [
+        "public voting",
+        "non-anonymous"
+      ]
+    },
+    {
+      "say": "private zzzap",
+      "means": "Results stay hidden until it closes, then each voter gets one look. Free for everyone.",
+      "avoid": [
+        "secret poll"
+      ]
+    },
+    {
+      "say": "photo zzzaps",
+      "means": "Photos as the answer choices. \"Photo Zzzaps\" as a feature title.",
+      "avoid": [
+        "image poll"
+      ]
+    },
+    {
+      "say": "tiebreaker / Break the Tie",
+      "means": "A quick runoff between only the tied answers.",
+      "avoid": [
+        "runoff poll",
+        "revote"
+      ]
+    },
+    {
+      "say": "length wheel / End At",
+      "means": "Spin to pick how long a zzzap runs, or roll to End At for an exact closing time.",
+      "avoid": [
+        "timer",
+        "duration picker"
+      ]
+    },
+    {
+      "say": "comment",
+      "means": "An optional note with a vote. Anonymous unless it's an Open Ballot.",
+      "avoid": [
+        "reply",
+        "message"
+      ]
+    },
+    {
+      "say": "Pin",
+      "means": "Long-press a card to keep it past the 7 days.",
+      "avoid": [
+        "save",
+        "bookmark",
+        "favorite"
+      ]
+    },
+    {
+      "say": "Lock Screen / Live Activity / Dynamic Island",
+      "means": "Live vote counts on your Lock Screen. People vote by long-pressing the notification.",
+      "avoid": [
+        "widget"
+      ]
+    },
+    {
+      "say": "Surge / Surge account / on Surge / Surge zzzap",
+      "means": "Invite-only accounts. A Surge zzzap goes to every follower and anyone with the link. You're invited to Surge, you don't upgrade to it.",
+      "avoid": [
+        "tier",
+        "creator",
+        "Public",
+        "influencer",
+        "upgrade to Surge"
+      ]
+    },
+    {
+      "say": "Home, Zzzaps, New, People, Me",
+      "means": "The five tabs. New is the bolt in the middle.",
+      "avoid": [
+        "Create tab",
+        "Profile tab",
+        "Friends tab",
+        "feed"
+      ]
+    },
+    {
+      "say": "Zzzap Official",
+      "means": "The team account everyone follows.",
+      "avoid": [
+        "brand account",
+        "Zzzap Team account",
+        "admin"
+      ]
+    },
+    {
+      "say": "hints",
+      "means": "The little tip cards. \"Show Hints Again\" is under Help.",
+      "avoid": [
+        "tooltips",
+        "tips"
+      ]
+    },
+    {
+      "say": "your people / your crew",
+      "means": "The friends, family, and teams someone zzzaps. Lean on this.",
+      "avoid": [
+        "users",
+        "audience",
+        "contacts",
+        "network"
+      ]
+    }
+  ],
+  "rules": [
+    "Use Our words exactly. If a feature isn't on this list, describe it in plain words instead of inventing a name.",
+    "Never promise anything the app doesn't do, and never mention features that aren't out yet.",
+    "Don't say \"free forever.\"",
+    "Fine to say: Zzzap never tracks people for ads, and brands only ever see totals.",
+    "A note: title up to 60 characters, text up to 280, button words up to 20.",
+    "A zzzap question: short enough to read at a glance on a Lock Screen.",
+    "A Surge badge reads \"Category · Surge,\" for example \"Golf Instructor · Surge.\"",
+    "For the logo, use the real bolt files, never the ⚡ emoji. Emoji colors change by phone and never match our yellow."
+  ],
+  "examples": [
+    {
+      "plain": "We added a new way to choose how long polls last. You can also pick a time for it to end.",
+      "zzzap": {
+        "title": "New: the length wheel",
+        "body": "Spin it to pick how long your zzzap runs, or roll to End At and pick the exact time voting closes.",
+        "button": "Try It"
+      },
+      "why": "Uses zzzap, not poll. Names the real feature. One idea, one button."
+    },
+    {
+      "plain": "Thank you to our early users. We would appreciate any feedback you have about the app.",
+      "zzzap": {
+        "title": "Thanks for being early",
+        "body": "You're one of the first people on Zzzap. Tell us what would make it better for you and your people.",
+        "button": "Send Feedback"
+      },
+      "why": "Warm and short. Talks about their people, not \"users.\""
+    },
+    {
+      "plain": "Don't forget you can create groups so it's faster to send polls to the same people!!",
+      "zzzap": {
+        "title": "Your circles, one tap away",
+        "body": "Make a circle for family, work, or your crew, and the right people are ready every time you ask.",
+        "button": null
+      },
+      "why": "Circle, not group. No exclamation pile, no \"don't forget\" nagging."
+    }
+  ]
+}

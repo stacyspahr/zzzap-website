@@ -512,6 +512,19 @@
         .note-card-button[hidden] { display: none; }
         .note-placeholder { color: #444; }
         .note-row-actions { display: flex; gap: 8px; }
+        .note-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+        .note-voice-btn { padding: 6px 12px; font-size: 13px; }
+        .voice-dialog { width: min(680px, calc(100% - 32px)); max-height: 85vh; }
+        .voice-h { color: #f5c518; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin: 18px 0 8px; }
+        .voice-h:first-child { margin-top: 0; }
+        .voice-say { color: #fff; font-size: 14px; font-weight: 600; }
+        .voice-term { grid-template-columns: 190px 1fr; }
+        .voice-avoid { color: #888; font-size: 12px; margin-top: 4px; }
+        .voice-example { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; font-size: 14px; line-height: 1.45; }
+        .voice-plain { color: #888; }
+        .voice-zzzap { color: #fff; margin-top: 4px; }
+        .voice-why { font-size: 12px; margin-top: 4px; }
+        .voice-updated { font-size: 12px; margin-top: 12px; }
 
         .mkt-anim { display: block; width: 100%; height: 340px; border: 1px solid #222; border-radius: 12px; background: #000; margin-bottom: 8px; }
     </style>
@@ -569,7 +582,10 @@
             <div class="notes-grid">
                 <div>
                 <div class="card">
-                    <h2>Write a note</h2>
+                    <div class="note-head">
+                        <h2>Write a note</h2>
+                        <button type="button" id="note-voice-btn" class="btn-secondary note-voice-btn">Zzzap Voice</button>
+                    </div>
                     <p class="surge-muted" style="margin: -8px 0 16px;">A card on Home under the status line. No push. People see it next time they open Zzzap, and it stays until they close it. One note or Official zzzap a week per person.</p>
                     <form id="note-form" autocomplete="off">
                         <div class="form-row">
@@ -677,6 +693,16 @@
                     <p class="surge-muted" style="font-size: 12px; margin-top: 10px;">Close to the app, not exact. Send Me a Test to see the real thing.</p>
                 </div>
             </div>
+            <!-- The Zzzap voice (voice.json), opened from Write a note -->
+            <dialog id="note-voice" class="stats-dialog voice-dialog">
+                <div class="stats-dialog-inner">
+                    <div class="stats-dialog-top">
+                        <h3>Zzzap voice and our words</h3>
+                        <button type="button" id="note-voice-close" class="btn-secondary">Close</button>
+                    </div>
+                    <div id="note-voice-body"><p class="surge-muted">Loading…</p></div>
+                </div>
+            </dialog>
             </div> <!-- /notes section -->
 
             <div class="official-section" data-section="zzzaps" hidden>
@@ -2225,9 +2251,9 @@
             show(localStorage.getItem("officialSection") === "zzzaps" ? "zzzaps" : "notes");
         })();
     </script>
-    <script type="module" src="notes.js?v=2"></script>
+    <script type="module" src="notes.js?v=3"></script>
     <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="stats.js?v=3"></script>
-    <script type="module" src="marketing.js?v=3"></script>
+    <script type="module" src="marketing.js?v=4"></script>
 </body>
 </html>

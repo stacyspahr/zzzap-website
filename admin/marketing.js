@@ -1,9 +1,11 @@
 // Admin console → Marketing (Stacy 2026-10-19, for Haley and anyone doing
-// marketing). Pitch pages, brand files, and wording rules. Everything here is
+// marketing). Pitch pages, brand files, and the Zzzap voice. Everything here is
 // static and public (the files live in /assets/brand/ on the public site), so
 // never put private information on this tab.
 //
 // To add a file: drop it in assets/brand/ and add a line to BRAND_GROUPS.
+
+import { loadVoice, renderVoice } from "./voice-view.js";
 
 const BRAND = "../assets/brand/";
 
@@ -74,15 +76,6 @@ const BASICS = [
     ["Background", "Black. Zzzap is dark only; there’s no light version of the app."],
     ["App Store link", "https://apps.apple.com/app/id6761918562"],
     ["Website", "https://zzzap-app.com"],
-];
-
-const WORDING = [
-    "Say “Surge,” “Surge account,” or “on Surge.” Never “tier” or “creator.”",
-    "A Surge badge reads “Category · Surge,” for example “Golf Instructor · Surge.”",
-    "No long dashes (— or –) in posts. They read as written by AI. Use a period or comma.",
-    "Use the real bolt files for the logo, never the ⚡ emoji. Emoji colors change by phone and never match our yellow.",
-    "Fine to say: Zzzap never tracks people for ads, and brands only ever see totals.",
-    "Don’t promise “free forever.”",
 ];
 
 // Not built yet. Shown dimmed with what each one needs.
@@ -206,10 +199,15 @@ function basics() {
     return section("basics", "Brand basics", "Name, tagline, colors, links", [list]);
 }
 
-function wording() {
-    const list = el("ul", "mkt-rules");
-    WORDING.forEach(rule => list.append(el("li", "", rule)));
-    return section("wording", "Wording rules", `${WORDING.length} rules`, [list]);
+// The Zzzap voice and our words (voice.json), the same guide the AI follows.
+// It replaced the old wording rules list (2026-10-30).
+function voiceGuide() {
+    const body = el("div");
+    body.append(el("p", "surge-muted", "Loading…"));
+    loadVoice()
+        .then(voice => body.replaceChildren(...renderVoice(voice)))
+        .catch(err => body.replaceChildren(el("p", "status-message error", `Couldn't load the voice guide: ${err.message}`)));
+    return section("voice", "Zzzap voice and our words", "Personality, rules, terms", [body]);
 }
 
 function comingSoon() {
@@ -233,7 +231,7 @@ document.getElementById("marketing-card").replaceChildren(
     ...brandGroups(),
     heading("Guidelines"),
     basics(),
-    wording(),
+    voiceGuide(),
     heading("Later"),
     comingSoon(),
 );

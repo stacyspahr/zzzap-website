@@ -15,6 +15,7 @@ import {
     getFirestore, collection, query, where, orderBy, limit, getDocs, getDoc, doc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
+import { loadVoice, renderVoice } from "./voice-view.js";
 
 const app = getApp();
 const auth = getAuth(app);
@@ -508,6 +509,19 @@ function startNotesListener() {
         els.sent.replaceChildren(waiting.cloneNode(true));
     });
 }
+
+// ---------- The Zzzap voice, open while writing ----------
+
+const voiceDialog = $("note-voice");
+$("note-voice-btn").addEventListener("click", async () => {
+    voiceDialog.showModal();
+    try {
+        $("note-voice-body").replaceChildren(...renderVoice(await loadVoice()));
+    } catch (err) {
+        $("note-voice-body").replaceChildren(el("p", "status-message error", `Couldn't load the voice guide: ${err.message}`));
+    }
+});
+$("note-voice-close").addEventListener("click", () => voiceDialog.close());
 
 // ---------- Start once signed in ----------
 
