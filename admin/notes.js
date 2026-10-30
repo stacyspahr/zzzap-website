@@ -510,6 +510,60 @@ function startNotesListener() {
     });
 }
 
+// ---------- Say It Like Zzzap ----------
+// Sends what's typed to rewriteInZzzapVoice (server, Claude + voice.json) and
+// shows the versions. Picking one fills the form; nothing is sent from here.
+
+const sayBtn = $("note-say-btn");
+const sayResults = $("note-say-results");
+
+/// "the New tab", "a web page", ... so the AI can write fitting button words.
+function buttonFor() {
+    const choice = els.action.value;
+    if (!choice) return null;
+    if (choice === "link") return "a web page";
+    const name = ACTION_NAMES[choice];
+    return name.endsWith("tab") ? `the ${name}` : `the ${name} screen`;
+}
+
+function useVersion(option) {
+    els.title.value = option.title;
+    els.body.value = option.body;
+    if (option.button) els.buttonLabel.value = option.button;
+    sayResults.replaceChildren();
+    changed();
+}
+
+sayBtn.addEventListener("click", async () => {
+    const draft = [els.title.value.trim(), els.body.value.trim()].filter(Boolean).join("\n");
+    if (!draft) {
+        sayResults.replaceChildren(el("p", "status-message error", "Type what you want to say in Title or Text first."));
+        return;
+    }
+    sayBtn.disabled = true;
+    sayBtn.textContent = "Writing…";
+    sayResults.replaceChildren(el("p", "surge-muted", "Writing 3 versions in the Zzzap voice…"));
+    try {
+        const { data } = await httpsCallable(functions, "rewriteInZzzapVoice", { timeout: 120000 })({ draft, buttonFor: buttonFor() });
+        sayResults.replaceChildren(...data.options.map(option => {
+            const row = el("div", "voice-option");
+            const text = el("div");
+            text.append(el("div", "voice-option-title", option.title), el("div", "voice-option-body", option.body));
+            if (option.button) text.append(el("div", "voice-option-button", option.button));
+            row.append(text, button("Use This", "btn-primary", () => useVersion(option)));
+            return row;
+        }));
+    } catch (err) {
+        // Shown right under the button, not at the bottom of the form.
+        sayResults.replaceChildren(el("p", "status-message error", serverNotReady(err)
+            ? "Say It Like Zzzap isn't switched on yet."
+            : err.message || "Couldn't write it. Try again."));
+    } finally {
+        sayBtn.disabled = false;
+        sayBtn.textContent = "Say It Like Zzzap";
+    }
+});
+
 // ---------- The Zzzap voice, open while writing ----------
 
 const voiceDialog = $("note-voice");
