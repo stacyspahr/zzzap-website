@@ -2,10 +2,15 @@
 // Write a "From Zzzap" note (a Home card, no push), pick who gets it,
 // check who'll be skipped, then send, schedule, save a draft, or test.
 //
+// The Zzzap voice is required (Stacy, 2026-10-30): you type it plainly, Say It
+// Like Zzzap writes 3 versions, and you pick one. The picked words can't be
+// edited here, and the server only accepts a picked version's id.
+//
 // Everything goes through three admin-only server functions (Zak's half,
 // spec: backend/OFFICIAL-NOTES-SPEC.md in the app repo):
 //   previewOfficialNote({ audience })          who would get it, who's skipped
-//   saveOfficialNote({ noteId?, ..., action }) draft / schedule / send / test
+//   saveOfficialNote({ noteId?, voiceVersionId, buttonAction, ..., action })
+//                                               draft / schedule / send / test
 //   deleteOfficialNote({ noteId })             delete a draft, cancel a scheduled one
 // Until they're deployed, the screen shows sample numbers and says so.
 
@@ -25,11 +30,8 @@ const functions = getFunctions(app);
 const $ = id => document.getElementById(id);
 const els = {
     form: $("note-form"),
-    title: $("note-title"),
-    body: $("note-body"),
+    draft: $("note-draft"),
     action: $("note-action"),
-    buttonRow: $("note-button-row"),
-    buttonLabel: $("note-button-label"),
     linkRow: $("note-link-row"),
     link: $("note-link"),
     peopleRow: $("note-people-row"),
@@ -52,7 +54,6 @@ const els = {
     previewButton: $("note-preview-button"),
 };
 
-const DEFAULT_BUTTON_WORDS = { "screen:feedback": "Send Feedback" };
 const ACTION_NAMES = {
     "tab:home": "Home tab", "tab:zzzaps": "Zzzaps tab", "tab:create": "New tab",
     "tab:people": "People tab", "tab:me": "Me tab",
@@ -62,6 +63,9 @@ const ACTION_NAMES = {
 };
 
 let picked = new Map();       // uid -> name, for "Everyone except" / "Only"
+let versions = [];            // the last 3 from Say It Like Zzzap: { id, title, body, button }
+let chosen = null;            // the picked version (its words are locked)
+let writtenFor = null;        // the draft + button the versions were written for
 let editingNoteId = null;     // set while editing a draft or scheduled note
 let checkedFingerprint = null; // the payload the last check was for
 let checkedCount = 0;
@@ -118,34 +122,26 @@ async function nameFor(uid) {
 // ---------- The note being written ----------
 
 /// What gets sent to the server. Throws a plain message if something's missing.
+/// The words are the chosen version's; only its id goes to the server.
 function buildNote() {
-    const title = els.title.value.trim();
-    const body = els.body.value.trim();
-    if (!title) throw new Error("Add a title.");
-    if (!body) throw new Error("Add some text.");
+    if (!chosen) throw new Error("Tap Say It Like Zzzap and pick a version first.");
 
-    let btn = null;
+    let buttonAction = null;
     const choice = els.action.value;
-    if (choice) {
-        const label = els.buttonLabel.value.trim();
-        if (!label) throw new Error("Add the button words, or pick No button.");
-        let action;
-        if (choice === "link") {
-            const url = els.link.value.trim();
-            if (!/^https:\/\/\S+$/.test(url)) throw new Error("The link has to start with https://");
-            action = { type: "link", url };
-        } else {
-            const [type, value] = choice.split(":");
-            action = type === "tab" ? { type, tab: value } : { type, screen: value };
-        }
-        btn = { label, action };
+    if (choice === "link") {
+        const url = els.link.value.trim();
+        if (!/^https:\/\/\S+$/.test(url)) throw new Error("The link has to start with https://");
+        buttonAction = { type: "link", url };
+    } else if (choice) {
+        const [type, value] = choice.split(":");
+        buttonAction = type === "tab" ? { type, tab: value } : { type, screen: value };
     }
 
     const mode = audienceMode();
     const audience = mode === "everyone" ? { mode } : { mode, uids: [...picked.keys()] };
     if (mode === "only" && !audience.uids.length) throw new Error("Pick at least one person.");
 
-    return { title, body, button: btn, audience };
+    return { voiceVersionId: chosen.id, buttonAction, audience, title: chosen.title };
 }
 
 /// Milliseconds since 1970 for a scheduled send, or null.
@@ -164,6 +160,8 @@ function fingerprint() {
 // Any change means the check is stale, so Send turns off again.
 function changed() {
     updateCounts();
+    // New words or a different button means the versions no longer fit.
+    if (writtenFor && writtenFor !== voiceInput()) clearVersions("You changed what it says or the button. Tap Say It Like Zzzap again.");
     updatePreview();
     if (checkedFingerprint && fingerprint() !== checkedFingerprint) {
         checkedFingerprint = null;
@@ -174,6 +172,8 @@ function changed() {
 }
 
 function updateSendButton() {
+    els.testBtn.disabled = !chosen;
+    els.draftBtn.disabled = !chosen;
     const ready = checkedFingerprint !== null && checkedFingerprint === fingerprint();
     els.sendBtn.disabled = !ready;
     const scheduled = els.scheduleToggle.checked;
@@ -189,24 +189,16 @@ function updateCounts() {
 }
 
 function updatePreview() {
-    const title = els.title.value.trim();
-    const body = els.body.value.trim();
-    els.previewTitle.textContent = title || "Title";
-    els.previewTitle.classList.toggle("note-placeholder", !title);
-    els.previewBody.textContent = body || "Your text shows here.";
-    els.previewBody.classList.toggle("note-placeholder", !body);
-    const label = els.buttonLabel.value.trim();
+    els.previewTitle.textContent = chosen ? chosen.title : "Title";
+    els.previewTitle.classList.toggle("note-placeholder", !chosen);
+    els.previewBody.textContent = chosen ? chosen.body : "Pick a version to see it here.";
+    els.previewBody.classList.toggle("note-placeholder", !chosen);
     els.previewButton.hidden = !els.action.value;
-    els.previewButton.textContent = label || "Button";
+    els.previewButton.textContent = chosen?.button || "Button";
 }
 
 function applyAction() {
-    const choice = els.action.value;
-    els.buttonRow.classList.toggle("hidden", !choice);
-    els.linkRow.classList.toggle("hidden", choice !== "link");
-    if (choice && !els.buttonLabel.value.trim() && DEFAULT_BUTTON_WORDS[choice]) {
-        els.buttonLabel.value = DEFAULT_BUTTON_WORDS[choice];
-    }
+    els.linkRow.classList.toggle("hidden", els.action.value !== "link");
 }
 
 function applyAudience() {
@@ -353,8 +345,9 @@ async function save(action) {
     buttons.forEach(b => { b.disabled = true; });
     setStatus(action === "draft" ? "Saving…" : "Sending…");
     try {
+        const { title, ...payload } = note;
         const { data } = await httpsCallable(functions, "saveOfficialNote")({
-            ...note,
+            ...payload,
             noteId: editingNoteId,
             action: scheduling ? "schedule" : action,
             sendAt,
@@ -378,8 +371,6 @@ async function save(action) {
             : notLinked ? "Your app account isn't linked yet. Ask Zak to add it."
             : `Couldn't ${action === "draft" ? "save" : "send"}: ${err.message}`, "error");
     } finally {
-        els.testBtn.disabled = false;
-        els.draftBtn.disabled = false;
         updateSendButton();
     }
 }
@@ -393,6 +384,11 @@ function clearForm() {
     picked = new Map();
     editingNoteId = null;
     checkedFingerprint = null;
+    versions = [];
+    chosen = null;
+    writtenFor = null;
+    sayResults.replaceChildren();
+    sayBtn.textContent = "Say It Like Zzzap";
     els.results.replaceChildren();
     renderChips();
     applyAction();
@@ -408,12 +404,17 @@ function clearForm() {
 async function loadIntoForm(id, n) {
     clearForm();
     editingNoteId = id;
-    els.title.value = n.title || "";
-    els.body.value = n.body || "";
+    els.draft.value = n.draft || "";
     const a = n.button?.action;
     els.action.value = !a ? "" : a.type === "link" ? "link" : `${a.type}:${a.tab || a.screen}`;
-    els.buttonLabel.value = n.button?.label || "";
     els.link.value = a?.type === "link" ? a.url : "";
+    // The saved words stay picked until what it says or the button changes.
+    if (n.voiceVersionId) {
+        chosen = { id: n.voiceVersionId, title: n.title, body: n.body, button: n.button?.label || "" };
+        versions = [chosen];
+        writtenFor = voiceInput();
+        renderVersions();
+    }
     const mode = n.audience?.mode || "everyone";
     els.form.querySelector(`input[name="note-audience"][value="${mode}"]`).checked = true;
     for (const uid of n.audience?.uids || []) picked.set(uid, await nameFor(uid));
@@ -427,7 +428,7 @@ async function loadIntoForm(id, n) {
     applyAction();
     applyAudience();
     changed();
-    setStatus(`Editing "${n.title}". Save Draft or Send when ready.`);
+    setStatus(`Editing "${n.title}". To change the words, change what it says and write it again.`);
     els.form.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -514,8 +515,9 @@ function startNotesListener() {
 }
 
 // ---------- Say It Like Zzzap ----------
-// Sends what's typed to rewriteInZzzapVoice (server, Claude + voice.json) and
-// shows the versions. Picking one fills the form; nothing is sent from here.
+// Sends what's typed to rewriteInZzzapVoice (server, Claude + voice.json),
+// which saves each version and returns its id. Picking one is the only way to
+// set a note's words.
 
 const sayBtn = $("note-say-btn");
 const sayResults = $("note-say-results");
@@ -529,33 +531,56 @@ function buttonFor() {
     return name.endsWith("tab") ? `the ${name}` : name;
 }
 
-function useVersion(option) {
-    els.title.value = option.title;
-    els.body.value = option.body;
-    if (option.button) els.buttonLabel.value = option.button;
-    sayResults.replaceChildren();
-    changed();
+/// What the versions depend on. The link address doesn't change the words.
+function voiceInput() {
+    return JSON.stringify([els.draft.value.trim(), buttonFor()]);
+}
+
+function clearVersions(message) {
+    versions = [];
+    chosen = null;
+    writtenFor = null;
+    sayResults.replaceChildren(...(message ? [el("p", "surge-muted", message)] : []));
+}
+
+function renderVersions() {
+    sayResults.replaceChildren(...versions.map(option => {
+        const row = el("button", `voice-option${chosen?.id === option.id ? " chosen" : ""}`);
+        row.type = "button";
+        const text = el("div");
+        text.append(el("div", "voice-option-title", option.title), el("div", "voice-option-body", option.body));
+        if (option.button) text.append(el("div", "voice-option-button", option.button));
+        row.append(text, el("span", "voice-option-pick", chosen?.id === option.id ? "Picked" : "Pick"));
+        row.addEventListener("click", () => {
+            chosen = option;
+            renderVersions();
+            changed();
+        });
+        return row;
+    }));
 }
 
 sayBtn.addEventListener("click", async () => {
-    const draft = [els.title.value.trim(), els.body.value.trim()].filter(Boolean).join("\n");
+    const draft = els.draft.value.trim();
     if (!draft) {
-        sayResults.replaceChildren(el("p", "status-message error", "Type what you want to say in Title or Text first."));
+        sayResults.replaceChildren(el("p", "status-message error", "Type what you want to say first."));
         return;
     }
+    if (els.action.value === "link" && !/^https:\/\/\S+$/.test(els.link.value.trim())) {
+        sayResults.replaceChildren(el("p", "status-message error", "Add the link first. It has to start with https://"));
+        return;
+    }
+    const input = voiceInput();
     sayBtn.disabled = true;
     sayBtn.textContent = "Writing…";
-    sayResults.replaceChildren(el("p", "surge-muted", "Writing 3 versions in the Zzzap voice…"));
+    clearVersions("Writing 3 versions in the Zzzap voice…");
+    changed();
     try {
         const { data } = await httpsCallable(functions, "rewriteInZzzapVoice", { timeout: 120000 })({ draft, buttonFor: buttonFor() });
-        sayResults.replaceChildren(...data.options.map(option => {
-            const row = el("div", "voice-option");
-            const text = el("div");
-            text.append(el("div", "voice-option-title", option.title), el("div", "voice-option-body", option.body));
-            if (option.button) text.append(el("div", "voice-option-button", option.button));
-            row.append(text, button("Use This", "btn-primary", () => useVersion(option)));
-            return row;
-        }));
+        versions = data.options;
+        writtenFor = input;
+        renderVersions();
+        changed();
     } catch (err) {
         // Shown right under the button, not at the bottom of the form.
         sayResults.replaceChildren(el("p", "status-message error", serverNotReady(err)
@@ -563,7 +588,7 @@ sayBtn.addEventListener("click", async () => {
             : err.message || "Couldn't write it. Try again."));
     } finally {
         sayBtn.disabled = false;
-        sayBtn.textContent = "Say It Like Zzzap";
+        sayBtn.textContent = versions.length ? "Write It Again" : "Say It Like Zzzap";
     }
 });
 
