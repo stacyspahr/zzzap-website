@@ -483,6 +483,36 @@
         .mkt-summary-count { color: #777; font-size: 12px; }
         .mkt-section-body { padding: 0 16px 16px; }
         .mkt-section-body .mkt-tile, .mkt-section-body .mkt-link, .mkt-section-body .stat-box { background: #111; }
+        /* Zzzap Official → Notes (notes.js) */
+        .official-sections { margin-top: 0; }
+        .official-sections .admin-tab { font-size: 13px; padding: 6px 18px; }
+        .notes-grid { display: grid; grid-template-columns: minmax(0, 520px) 300px; gap: 24px; align-items: start; }
+        @media (max-width: 880px) { .notes-grid { grid-template-columns: 1fr; } }
+        .notes-preview-card { position: sticky; top: 24px; }
+        .note-count { color: #555; font-weight: 400; float: right; }
+        .note-audience { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 12px; }
+        .note-audience label { color: #ddd; font-size: 14px; cursor: pointer; }
+        .note-audience input { accent-color: #f5c518; margin-right: 6px; }
+        .note-later { font-size: 12px; }
+        .note-chip-x { background: transparent; color: #f5c518; padding: 0 0 0 8px; font-size: 12px; }
+        .note-check { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; font-size: 14px; color: #ddd; }
+        .note-check.ready { border-color: #f5c518; }
+        .note-check strong { color: #fff; }
+        .note-check details { margin-top: 6px; color: #999; font-size: 13px; }
+        .note-check summary { cursor: pointer; color: #f5c518; }
+        .note-buttons { display: flex; gap: 8px; }
+        .note-buttons .btn-primary { flex: 1; width: auto; }
+        .note-phone { background: #000; border: 1px solid #222; border-radius: 24px; padding: 28px 18px 22px; }
+        .note-status-line { color: #555; font-size: 13px; text-align: center; margin-bottom: 14px; }
+        .note-card { background: #1c1c1e; border-radius: 16px; padding: 10px 16px 16px; }
+        .note-card-top { display: flex; justify-content: space-between; color: #8e8e93; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+        .note-card-title { color: #fff; font-size: 16px; font-weight: 600; margin-bottom: 4px; word-break: break-word; }
+        .note-card-body { color: #8e8e93; font-size: 14px; line-height: 1.35; word-break: break-word; }
+        .note-card-button { display: inline-block; margin-top: 12px; background: #f5c518; color: #000; font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 100px; }
+        .note-card-button[hidden] { display: none; }
+        .note-placeholder { color: #444; }
+        .note-row-actions { display: flex; gap: 8px; }
+
         .mkt-anim { display: block; width: 100%; height: 340px; border: 1px solid #222; border-radius: 12px; background: #000; margin-bottom: 8px; }
     </style>
 </head>
@@ -519,15 +549,137 @@
                 </div>
             </div>
 
-            <!-- Tabs: Send (Zzzap Official) and Surge. Remembered per browser. -->
+            <!-- Tabs, remembered per browser. "send" is Zzzap Official (the
+                 old name is kept as the id so saved tabs and #send links work). -->
             <div class="admin-tabs" role="tablist">
-                <button type="button" class="admin-tab" role="tab" data-tab="send">Send</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="send">Zzzap Official</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="stats">Stats</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="marketing">Marketing</button>
             </div>
 
             <div class="admin-panel" data-panel="send">
+            <!-- Zzzap Official has two sections: Notes (notes.js) and Zzzaps. -->
+            <div class="admin-tabs official-sections" role="tablist">
+                <button type="button" class="admin-tab" role="tab" data-section="notes">Notes</button>
+                <button type="button" class="admin-tab" role="tab" data-section="zzzaps">Zzzaps</button>
+            </div>
+
+            <div class="official-section" data-section="notes" hidden>
+            <div class="notes-grid">
+                <div>
+                <div class="card">
+                    <h2>Write a note</h2>
+                    <p class="surge-muted" style="margin: -8px 0 16px;">A card on Home under the status line. No push. People see it next time they open Zzzap, and it stays until they close it. One note or Official zzzap a week per person.</p>
+                    <form id="note-form" autocomplete="off">
+                        <div class="form-row">
+                            <label for="note-title">Title <span class="note-count" data-for="note-title"></span></label>
+                            <input type="text" id="note-title" maxlength="60" placeholder="e.g. New: the length wheel" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="note-body">Text <span class="note-count" data-for="note-body"></span></label>
+                            <textarea id="note-body" maxlength="280" placeholder="A line or two. Plain words, no emoji." required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <label for="note-action">Button</label>
+                            <select id="note-action">
+                                <option value="" selected>No button</option>
+                                <optgroup label="Opens a tab">
+                                    <option value="tab:home">Home tab</option>
+                                    <option value="tab:zzzaps">Zzzaps tab</option>
+                                    <option value="tab:create">New tab</option>
+                                    <option value="tab:people">People tab</option>
+                                    <option value="tab:me">Me tab</option>
+                                </optgroup>
+                                <optgroup label="Opens a screen">
+                                    <option value="screen:feedback">Send Feedback screen</option>
+                                </optgroup>
+                                <option value="link">Opens a link</option>
+                            </select>
+                        </div>
+                        <div class="form-row hidden" id="note-button-row">
+                            <label for="note-button-label">Button words <span class="note-count" data-for="note-button-label"></span></label>
+                            <input type="text" id="note-button-label" maxlength="20" placeholder="e.g. Try It">
+                        </div>
+                        <div class="form-row hidden" id="note-link-row">
+                            <label for="note-link">Link</label>
+                            <input type="text" id="note-link" placeholder="https://zzzap-app.com/...">
+                        </div>
+
+                        <h3 class="surge-h3">Who gets it</h3>
+                        <div class="note-audience">
+                            <label><input type="radio" name="note-audience" value="everyone" checked> Everyone</label>
+                            <label><input type="radio" name="note-audience" value="everyoneExcept"> Everyone except…</label>
+                            <label><input type="radio" name="note-audience" value="only"> Only…</label>
+                        </div>
+                        <div id="note-people-row" class="hidden">
+                            <div class="form-row" style="margin-bottom: 8px;">
+                                <input type="text" id="note-people-search" placeholder="Search by name">
+                            </div>
+                            <div id="note-people-results"></div>
+                            <div id="note-people-chips" class="surge-chips"></div>
+                            <p class="surge-muted" style="font-size: 12px;">Search finds accounts that can be found in the app. Hidden accounts don't show.</p>
+                        </div>
+                        <p class="surge-muted note-later">Coming later: no circle yet · never sent a zzzap · new this week · Power · Spark · Surge accounts</p>
+
+                        <div class="form-row" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 16px;">
+                            <input type="checkbox" id="note-schedule-toggle" style="margin-top: 4px; accent-color: #f5c518;">
+                            <label for="note-schedule-toggle" style="margin-bottom: 0; cursor: pointer; flex: 1;">
+                                <strong style="color: #fff; font-size: 14px;">Schedule for later</strong>
+                            </label>
+                        </div>
+                        <div class="form-row hidden" id="note-schedule-row">
+                            <label for="note-send-at">Send at</label>
+                            <input type="datetime-local" id="note-send-at">
+                        </div>
+
+                        <h3 class="surge-h3">Before you send</h3>
+                        <div id="note-check" class="note-check">
+                            <p class="surge-muted">Check who gets it first. Send stays off until you do, and again after any change.</p>
+                        </div>
+                        <button type="button" id="note-check-btn" class="btn-secondary">Check Who Gets It</button>
+
+                        <div class="send-row note-buttons">
+                            <button type="button" id="note-test-btn" class="btn-secondary">Send Me a Test</button>
+                            <button type="button" id="note-draft-btn" class="btn-secondary">Save Draft</button>
+                            <button type="submit" id="note-send-btn" class="btn-primary" disabled>Send</button>
+                        </div>
+                        <div id="note-status" class="status-message"></div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>Drafts and scheduled</h2>
+                    <div id="note-drafts"><p class="surge-muted">Loading…</p></div>
+                </div>
+
+                <div class="card">
+                    <h2>Sent</h2>
+                    <div id="note-sent"><p class="surge-muted">Loading…</p></div>
+                </div>
+                </div>
+
+                <!-- What it looks like on Home -->
+                <div class="card notes-preview-card">
+                    <h2>Preview</h2>
+                    <div class="note-phone">
+                        <div class="note-status-line">All caught up.</div>
+                        <div class="note-card">
+                            <div class="note-card-top">
+                                <span>From Zzzap</span>
+                                <span class="note-card-x" aria-hidden="true">✕</span>
+                            </div>
+                            <div id="note-preview-title" class="note-card-title"></div>
+                            <div id="note-preview-body" class="note-card-body"></div>
+                            <div id="note-preview-button" class="note-card-button" hidden></div>
+                        </div>
+                    </div>
+                    <p class="surge-muted" style="font-size: 12px; margin-top: 10px;">Close to the app, not exact. Send Me a Test to see the real thing.</p>
+                </div>
+            </div>
+            </div> <!-- /notes section -->
+
+            <div class="official-section" data-section="zzzaps" hidden>
             <div class="admin-grid">
 
             <!-- Templates sidebar -->
@@ -652,6 +804,7 @@
             </div>
             </div> <!-- /right column -->
             </div> <!-- /admin-grid -->
+            </div> <!-- /zzzaps section -->
             </div> <!-- /send panel -->
 
             <div class="admin-panel" data-panel="surge" hidden>
@@ -2027,7 +2180,7 @@
         // adminTabs.allow(names) limits which tabs show (used for roles like
         // Marketing); with no limit every tab shows.
         (function () {
-            const tabs = [...document.querySelectorAll(".admin-tab")];
+            const tabs = [...document.querySelectorAll(".admin-tab[data-tab]")];
             const panels = document.querySelectorAll(".admin-panel");
             let allowed = tabs.map(t => t.dataset.tab);
             function show(name) {
@@ -2054,7 +2207,25 @@
             };
             show(startTab());
         })();
+
+        // Zzzap Official sections: Notes and Zzzaps, remembered per browser.
+        (function () {
+            const buttons = [...document.querySelectorAll(".admin-tab[data-section]")];
+            const sections = document.querySelectorAll(".official-section");
+            function show(name) {
+                buttons.forEach(b => {
+                    const on = b.dataset.section === name;
+                    b.classList.toggle("active", on);
+                    b.setAttribute("aria-selected", on ? "true" : "false");
+                });
+                sections.forEach(s => { s.hidden = s.dataset.section !== name; });
+                localStorage.setItem("officialSection", name);
+            }
+            buttons.forEach(b => b.addEventListener("click", () => show(b.dataset.section)));
+            show(localStorage.getItem("officialSection") === "zzzaps" ? "zzzaps" : "notes");
+        })();
     </script>
+    <script type="module" src="notes.js?v=1"></script>
     <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="stats.js?v=3"></script>
     <script type="module" src="marketing.js?v=3"></script>
