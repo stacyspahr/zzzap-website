@@ -201,6 +201,15 @@
       ]
     },
     {
+      "say": "Post Everywhere / Launch, Update, Last Call, Results",
+      "means": "Where a Surge account posts a zzzap to Instagram, Facebook, TikTok and more. Every post links to their page, which always shows the live zzzap. The four story cards are its moments.",
+      "avoid": [
+        "Share to Story",
+        "repost",
+        "campaign"
+      ]
+    },
+    {
       "say": "Home, Zzzaps, New, People, Me",
       "means": "The five tabs. New is the bolt in the middle.",
       "avoid": [
