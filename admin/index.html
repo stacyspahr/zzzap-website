@@ -433,7 +433,7 @@
 
         /* 12-week trend (stats.js buildTrend). One series at a time, picked by
            the switch, so no legend. Current week yellow, the rest gray. */
-        .trend-switch { display: inline-flex; gap: 4px; padding: 4px; background: #161616; border: 1px solid #222; border-radius: 12px; margin-bottom: 10px; }
+        .trend-switch { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #161616; border: 1px solid #222; border-radius: 12px; margin-bottom: 10px; }
         .trend-option { background: transparent; border: none; color: #aaa; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 9px; cursor: pointer; }
         .trend-option:hover { color: #fff; }
         .trend-option.active { background: #f5c518; color: #111; }
@@ -455,6 +455,7 @@
         .trend-col:last-child .trend-tip { left: auto; right: 0; transform: none; }
         .trend-goal { position: absolute; left: 50%; transform: translateX(-50%); width: 36px; border-top: 2px dashed #ccc; pointer-events: none; }
         .trend-table { margin-top: 10px; font-size: 13px; color: #aaa; }
+        .trend-table { overflow-x: auto; }
         .trend-table summary { cursor: pointer; color: #999; }
         .trend-table table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
         .trend-table th, .trend-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #222; }

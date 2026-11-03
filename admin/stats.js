@@ -438,16 +438,52 @@ const TREND_SERIES = [
         note: "How much of each week's sending the busiest sender did. Down is good: the sending is spreading out.",
         value: w => w.share ?? 0, show: w => (w.share === null ? "None" : `${w.share}%`), goal: () => null, max: 100,
     },
+    rateSeries("cameBack", "Came back", "Of the people active the week before, how many were active again that week. The dashed mark is the goal."),
+    rateSeries("afterMonth", "After a month", "Of the people active 4 weeks earlier, how many were active again that week. The first 4 weeks have nothing to compare with. The dashed mark is the goal."),
+    rateSeries("voteRate", "Vote rate", "Of everyone asked on finished zzzaps sent that week, how many voted. The dashed mark is the goal."),
 ];
+
+// A percent series with its goal from GOALS.rates as the dashed mark.
+// Each week stores { part, whole }; no whole means nothing to measure.
+function rateSeries(key, label, note) {
+    const pct = w => (w[key].whole ? Math.round((w[key].part / w[key].whole) * 100) : null);
+    return {
+        key, label, note, max: 100,
+        value: w => pct(w) ?? 0,
+        show: w => (pct(w) === null ? "None" : `${pct(w)}%`),
+        detail: w => (w[key].whole ? `${w[key].part} of ${w[key].whole}` : null),
+        goal: () => Math.round(GOALS.rates[label] * 100),
+    };
+}
+
+// Of the people in `before`, how many are also in `after`.
+function overlap(before, after) {
+    return { part: [...before].filter(uid => after.has(uid)).length, whole: before.size };
+}
 let trendKey = "active";
 let trendWeeks = [];
 
 function buildTrend(allPolls, appPeople) {
     const now = Date.now();
     const notCancelled = allPolls.filter(p => p.status !== "cancelled");
+    // Active people per week, 0 = the last 7 days. Weeks past the window are
+    // empty, so the oldest weeks have nothing to compare with.
+    const activeByWeek = [];
+    for (let i = 0; i < WEEKS; i++) activeByWeek.push(activePeople(weekOf(notCancelled, i, now), appPeople));
+    const none = { part: 0, whole: 0 };
     trendWeeks = [];
     for (let i = WEEKS - 1; i >= 0; i--) {
         const inWeek = weekOf(notCancelled, i, now);
+        // Vote rate counts finished zzzaps only, same as the box.
+        const voteRate = { part: 0, whole: 0 };
+        for (const p of inWeek) {
+            const end = endTime(p);
+            if (!end || end.getTime() > now) continue;
+            const recipients = (p.recipients || []).filter(uid => uid !== p.creatorId);
+            const voters = p.voters || {};
+            voteRate.whole += recipients.length;
+            voteRate.part += recipients.filter(uid => voters[uid] !== undefined).length;
+        }
         const senders = senderCounts(inWeek);
         const top = Math.max(0, ...senders.values());
         trendWeeks.push({
@@ -457,6 +493,9 @@ function buildTrend(allPolls, appPeople) {
             sent: inWeek.length,
             senders: senders.size,
             share: inWeek.length ? Math.round((top / inWeek.length) * 100) : null,
+            cameBack: i + 1 < WEEKS ? overlap(activeByWeek[i + 1], activeByWeek[i]) : none,
+            afterMonth: i + 4 < WEEKS ? overlap(activeByWeek[i + 4], activeByWeek[i]) : none,
+            voteRate,
             current: i === 0,
             goal: growthGoal(now - i * 7 * DAY),
         });
@@ -499,7 +538,7 @@ function drawTrend(picker, chartSlot) {
 
     const chart = el("div", "trend-chart");
     chart.setAttribute("role", "img");
-    chart.setAttribute("aria-label", `${series.label} per week, last ${WEEKS} weeks: ${weeks.map(series.show).join(", ")}. This week ${series.show(last)}${lastGoal !== null ? `, goal ${lastGoal}` : ""}.`);
+    chart.setAttribute("aria-label", `${series.label} per week, last ${WEEKS} weeks: ${weeks.map(series.show).join(", ")}. This week ${series.show(last)}${lastGoal !== null ? `, goal ${lastGoal}${series.max === 100 ? "%" : ""}` : ""}.`);
     const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
     for (const w of weeks) {
         const value = series.value(w);
@@ -509,6 +548,8 @@ function drawTrend(picker, chartSlot) {
         const plot = el("div", "trend-plot");
         const bar = el("div", "trend-bar");
         bar.style.height = `${(value / max) * 100}%`;
+        // No data that week: no bar at all, so it doesn't read as zero.
+        if (series.show(w) === "None") bar.style.minHeight = "0";
         // The number floats above the bar so it never takes height from it.
         if (w.current || value === biggest) bar.append(el("div", "trend-cap", series.show(w)));
         plot.append(bar);
@@ -521,11 +562,12 @@ function drawTrend(picker, chartSlot) {
         const tip = el("div", "trend-tip");
         tip.append(
             el("strong", "", `${series.show(w)} ${series.label.toLowerCase()}`),
+            ...(series.detail && series.detail(w) ? [el("span", "", series.detail(w))] : []),
             ...(series.key !== "active" ? [el("span", "", `${w.active} active`)] : []),
             el("span", "", plural(w.web, "web voter")),
             el("span", "", `${plural(w.sent, "zzzap")} sent`),
             ...(series.key !== "senders" ? [el("span", "", plural(w.senders, "sender"))] : []),
-            ...(goal !== null ? [el("span", "", `Goal ${goal}`)] : []),
+            ...(goal !== null ? [el("span", "", `Goal ${goal}${series.max === 100 ? "%" : ""}`)] : []),
             el("span", "trend-tip-week", w.current ? "Last 7 days" : `Week of ${shortDate(w.start)}`),
         );
         col.append(plot, tip, el("div", "trend-label", w.current ? "Now" : `${w.start.getMonth() + 1}/${w.start.getDate()}`));
@@ -540,11 +582,11 @@ function buildTrendTable() {
     details.append(el("summary", "", "Show as a table"));
     const table = el("table");
     const head = el("tr");
-    ["Week of", "Active people", "Goal", "Web voters", "Zzzaps sent", "Senders", "Busiest share"].forEach(h => head.append(el("th", "", h)));
+    ["Week of", "Active people", "Goal", "Web voters", "Zzzaps sent", "Senders", "Busiest share", "Came back", "After a month", "Vote rate"].forEach(h => head.append(el("th", "", h)));
     table.append(head);
     for (const w of [...trendWeeks].reverse()) {
         const row = el("tr");
-        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.goal === null ? "" : w.goal, w.web, w.sent, w.senders, w.share === null ? "" : `${w.share}%`].forEach(v => row.append(el("td", "", String(v))));
+        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.goal === null ? "" : w.goal, w.web, w.sent, w.senders, w.share === null ? "" : `${w.share}%`, ...TREND_SERIES.slice(3).map(r => (r.detail(w) ? r.show(w) : ""))].forEach(v => row.append(el("td", "", String(v))));
         table.append(row);
     }
     details.append(table);
