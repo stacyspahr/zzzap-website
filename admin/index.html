@@ -905,7 +905,8 @@
             </div> <!-- /surge panel -->
 
             <div class="admin-panel" data-panel="stats" hidden>
-            <!-- Stats: totals only, never names (stats.js) -->
+            <!-- Stats: totals only, never names (stats.js). One exception:
+                 Devices → "Each person", so old versions can be chased down. -->
             <div class="card stats-panel-card">
                 <div class="stats-top">
                     <div id="stats-status" class="status-message"></div>
@@ -920,6 +921,10 @@
                 <h3 class="surge-h3">Last 12 weeks</h3>
                 <p id="stats-trend-note" class="surge-muted" style="margin-bottom: 12px;">Active people in the app each week. The dashed mark is that week's goal (7% more each week from Nov 2). Point at a week for details.</p>
                 <div id="stats-trend"></div>
+
+                <h3 class="surge-h3">Devices</h3>
+                <p class="surge-muted" style="margin-bottom: 12px;">Phones that opened the app in the last 30 days, simulators left out. Fills in as people update to a Zzzap build from Nov 3 or later.</p>
+                <div id="stats-devices"></div>
 
                 <h3 class="surge-h3">Social followers</h3>
                 <p class="surge-muted" style="margin-bottom: 12px;">Zzzap's own accounts, typed in by hand. Update each one at least once a week.</p>
@@ -2305,7 +2310,7 @@
     </script>
     <script type="module" src="notes.js?v=7"></script>
     <script type="module" src="surge.js?v=2"></script>
-    <script type="module" src="stats.js?v=7"></script>
+    <script type="module" src="stats.js?v=8"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>
 </html>

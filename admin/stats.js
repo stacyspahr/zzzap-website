@@ -1,5 +1,6 @@
 // Admin console → Stats (Stacy 2026-10-19).
-// Totals only, never names. Live boxes are worked out from the last 30 days
+// Totals only, never names (one exception: Devices → Each person, so people
+// on old versions can be found; Stacy 2026-11-03). Live boxes are worked out from the last 30 days
 // of zzzaps, which admins can already read. Sample boxes show made-up numbers
 // and say what each one needs before it can go live.
 //
@@ -10,7 +11,7 @@
 import { getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import {
-    getFirestore, collection, query, where, getDocs, Timestamp,
+    getFirestore, collection, query, where, getDocs, getDoc, doc, Timestamp,
     orderBy, limit, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
@@ -26,6 +27,7 @@ const els = {
     live: document.getElementById("stats-live"),
     trend: document.getElementById("stats-trend"),
     trendNote: document.getElementById("stats-trend-note"),
+    devices: document.getElementById("stats-devices"),
     sample: document.getElementById("stats-sample"),
     status: document.getElementById("stats-status"),
     refresh: document.getElementById("stats-refresh"),
@@ -593,6 +595,122 @@ function buildTrendTable() {
     return details;
 }
 
+// ---------- Devices ----------
+// Each person's phone, iOS and Zzzap version, saved by the app at most once
+// a day (DeviceReport.swift → devices/{uid}). Admin read only.
+
+const DEVICE_DAYS = 30;
+
+// Apple's model codes. A code not listed shows as the code itself
+// (new phones, like the Duo, until their name is added here).
+const MODEL_NAMES = {
+    "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max",
+    "iPhone12,8": "iPhone SE (2nd gen)",
+    "iPhone13,1": "iPhone 12 mini", "iPhone13,2": "iPhone 12", "iPhone13,3": "iPhone 12 Pro", "iPhone13,4": "iPhone 12 Pro Max",
+    "iPhone14,4": "iPhone 13 mini", "iPhone14,5": "iPhone 13", "iPhone14,2": "iPhone 13 Pro", "iPhone14,3": "iPhone 13 Pro Max",
+    "iPhone14,6": "iPhone SE (3rd gen)",
+    "iPhone14,7": "iPhone 14", "iPhone14,8": "iPhone 14 Plus", "iPhone15,2": "iPhone 14 Pro", "iPhone15,3": "iPhone 14 Pro Max",
+    "iPhone15,4": "iPhone 15", "iPhone15,5": "iPhone 15 Plus", "iPhone16,1": "iPhone 15 Pro", "iPhone16,2": "iPhone 15 Pro Max",
+    "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus", "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max",
+    "iPhone17,5": "iPhone 16e",
+    "iPhone18,3": "iPhone 17", "iPhone18,4": "iPhone Air", "iPhone18,1": "iPhone 17 Pro", "iPhone18,2": "iPhone 17 Pro Max",
+};
+
+function modelName(code) {
+    return MODEL_NAMES[code] || code || "Unknown";
+}
+
+// "1.1.10" sorts after "1.1.9".
+function compareVersions(a, b) {
+    const pa = String(a).split(".").map(Number);
+    const pb = String(b).split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const diff = (pa[i] || 0) - (pb[i] || 0);
+        if (diff) return diff;
+    }
+    return 0;
+}
+
+async function loadDevices() {
+    const since = Timestamp.fromMillis(Date.now() - DEVICE_DAYS * DAY);
+    const snap = await getDocs(query(collection(db, "devices"), where("lastSeen", ">=", since)));
+    const devices = snap.docs
+        .map(d => ({ uid: d.id, ...d.data(), lastSeen: toDate(d.data().lastSeen) }))
+        .filter(d => d.channel !== "Simulator");
+    // Names for the Each person table. A deleted or unreadable account
+    // just shows without a name.
+    await Promise.all(devices.map(async d => {
+        try {
+            const user = await getDoc(doc(db, "users", d.uid));
+            d.name = user.data()?.displayName || "";
+        } catch {
+            d.name = "";
+        }
+    }));
+    return devices;
+}
+
+// One small table: each value, how many people, what share.
+function countTable(heading, devices, valueOf, sort) {
+    const counts = new Map();
+    for (const d of devices) {
+        const value = valueOf(d);
+        counts.set(value, (counts.get(value) || 0) + 1);
+    }
+    const rows = [...counts.entries()].sort(sort || ((a, b) => b[1] - a[1]));
+    const wrap = el("div", "trend-table");
+    const table = el("table");
+    const head = el("tr");
+    [heading, "People", "Share"].forEach(h => head.append(el("th", "", h)));
+    table.append(head);
+    for (const [value, count] of rows) {
+        const row = el("tr");
+        [value, count, percent(count, devices.length)].forEach(v => row.append(el("td", "", String(v))));
+        table.append(row);
+    }
+    wrap.append(table);
+    return wrap;
+}
+
+function buildDevices(devices) {
+    if (!devices.length) {
+        return [el("p", "surge-muted", "No phones yet. They show up after people open a Zzzap build from Nov 3 or later.")];
+    }
+    const newestFirst = (a, b) => compareVersions(b[0], a[0]);
+    const tables = [
+        countTable("Zzzap version", devices, d => d.appVersion, newestFirst),
+        countTable("iOS version", devices, d => d.iosVersion, newestFirst),
+        countTable("Phone", devices, d => modelName(d.model)),
+        countTable("Installed from", devices, d => d.channel),
+    ];
+
+    // Each person, oldest Zzzap version first, so who needs to update is on top.
+    const details = el("details", "trend-table");
+    details.append(el("summary", "", `Each person (${devices.length})`));
+    const table = el("table");
+    const head = el("tr");
+    ["Name", "Zzzap", "iOS", "Phone", "From", "Last opened"].forEach(h => head.append(el("th", "", h)));
+    table.append(head);
+    const sorted = [...devices].sort((a, b) => compareVersions(a.appVersion, b.appVersion) || (a.name || "").localeCompare(b.name || ""));
+    for (const d of sorted) {
+        const row = el("tr");
+        [d.name || "No name", `${d.appVersion} (${d.build})`, d.iosVersion, modelName(d.model), d.channel, d.lastSeen ? daysAgo(d.lastSeen) : ""]
+            .forEach(v => row.append(el("td", "", String(v))));
+        table.append(row);
+    }
+    details.append(table);
+    return [...tables, details];
+}
+
+async function refreshDevices() {
+    try {
+        els.devices.replaceChildren(...buildDevices(await loadDevices()));
+    } catch (err) {
+        console.warn("[STATS] devices", err.message);
+        els.devices.replaceChildren(el("p", "surge-muted", `Couldn't load devices: ${err.message}`));
+    }
+}
+
 // ---------- Social followers ----------
 
 function shortDate(date) {
@@ -730,6 +848,7 @@ async function load() {
         const appPeople = appPeopleIn(polls);
         els.live.replaceChildren(...buildLiveBoxes(polls, appPeople).map(box));
         els.trend.replaceChildren(buildTrend(polls, appPeople));
+        refreshDevices();
         loadSocialQuietly();
         loaded = true;
         const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -764,6 +883,7 @@ onAuthStateChanged(auth, user => {
         loaded = false;
         els.live.replaceChildren();
         els.trend.replaceChildren();
+        els.devices.replaceChildren();
         els.socialBoxes.replaceChildren();
         showSocialDue([]);
         setStatus("");
