@@ -368,9 +368,10 @@ function buildTrend(allPolls, appPeople) {
         const col = el("div", w.current ? "trend-col current" : "trend-col");
         col.tabIndex = 0;
         const plot = el("div", "trend-plot");
-        if (w.current || w.active === max) plot.append(el("div", "trend-cap", String(w.active)));
         const bar = el("div", "trend-bar");
         bar.style.height = `${(w.active / max) * 100}%`;
+        // The number floats above the bar so it never takes height from it.
+        if (w.current || w.active === max) bar.append(el("div", "trend-cap", String(w.active)));
         plot.append(bar);
         const tip = el("div", "trend-tip");
         const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;

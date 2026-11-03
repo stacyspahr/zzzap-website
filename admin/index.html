@@ -430,12 +430,12 @@
            section title names it. Current week yellow, the rest gray. */
         .trend-chart { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #161616; border: 1px solid #222; border-radius: 12px; padding: 18px 12px 10px; }
         .trend-col { position: relative; display: flex; flex-direction: column; align-items: center; outline: none; }
-        .trend-plot { position: relative; height: 120px; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; border-bottom: 1px solid #333; }
-        .trend-bar { width: 100%; max-width: 24px; min-height: 2px; background: #555; border-radius: 4px 4px 0 0; }
+        .trend-plot { position: relative; box-sizing: border-box; height: 140px; padding-top: 20px; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; border-bottom: 1px solid #333; }
+        .trend-bar { position: relative; width: 100%; max-width: 24px; min-height: 2px; background: #555; border-radius: 4px 4px 0 0; }
         .trend-col.current .trend-bar { background: #f5c518; }
         .trend-col:hover .trend-bar, .trend-col:focus-visible .trend-bar { background: #888; }
         .trend-col.current:hover .trend-bar, .trend-col.current:focus-visible .trend-bar { background: #f5c518; }
-        .trend-cap { color: #ccc; font-size: 12px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+        .trend-cap { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 12px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
         .trend-label { color: #777; font-size: 11px; margin-top: 6px; font-variant-numeric: tabular-nums; }
         .trend-col.current .trend-label { color: #ccc; font-weight: 600; }
         .trend-tip { display: none; position: absolute; bottom: calc(100% - 20px); left: 50%; transform: translateX(-50%); z-index: 2; background: #222; border: 1px solid #333; border-radius: 8px; padding: 8px 10px; white-space: nowrap; flex-direction: column; gap: 2px; font-size: 12px; color: #aaa; pointer-events: none; }
@@ -2294,7 +2294,7 @@
     </script>
     <script type="module" src="notes.js?v=7"></script>
     <script type="module" src="surge.js?v=2"></script>
-    <script type="module" src="stats.js?v=4"></script>
+    <script type="module" src="stats.js?v=5"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>
 </html>
