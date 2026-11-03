@@ -24,6 +24,7 @@ const OFFICIAL_ID = "zzzap_official";
 const els = {
     panel: document.querySelector('.admin-panel[data-panel="stats"]'),
     live: document.getElementById("stats-live"),
+    trend: document.getElementById("stats-trend"),
     sample: document.getElementById("stats-sample"),
     status: document.getElementById("stats-status"),
     refresh: document.getElementById("stats-refresh"),
@@ -73,16 +74,28 @@ const INFO = {
         ["Good to know", "Using 7 days at a time evens out weekday and weekend swings. While the numbers are small, the percent jumps a lot: going from 4 to 8 reads as up 100%."],
     ],
     "Active people": [
-        ["What it is", "How many different people sent a zzzap or voted on one in the last 7 days. Each person counts once, however much they did."],
+        ["What it is", "How many different people in the app sent a zzzap or voted on one in the last 7 days. Each person counts once, however much they did."],
         ["Where the numbers come from", "The sender and everyone who voted on each zzzap sent in the last 7 days. Storm answers count as votes."],
-        ["Left out", `${LEFT_OUT} People who only opened the app or only looked at results, since the app doesn't record that.`],
+        ["Left out", `${LEFT_OUT} People who only opened the app or only looked at results, since the app doesn't record that. Web voters, who have their own box.`],
         ["Good to know", "This is the closest thing to weekly active users until Zak can count sign-ins. A vote counts toward the week the zzzap was sent, so a late vote on an older zzzap can land in the earlier week."],
     ],
     "Came back": [
-        ["What it is", "Of the people who were active 8 to 14 days ago, how many were active again in the last 7 days. Active means sent or voted, same as Active people."],
+        ["What it is", "Of the people who were active 8 to 14 days ago, how many were active again in the last 7 days. Active means sent or voted in the app, same as Active people."],
         ["Where the numbers come from", "Zzzaps sent in the last 14 days, split into two weeks, then matching people across the two weeks. Names are never shown, only the count."],
-        ["Left out", LEFT_OUT],
+        ["Left out", `${LEFT_OUT} Web voters.`],
         ["Good to know", "This is the best sign of whether Zzzap is becoming a habit. With fewer than about 20 people, one person changes it a lot, so watch the trend over several weeks, not one reading."],
+    ],
+    "Web voters": [
+        ["What it is", "How many different browsers voted on vote.zzzap-app.com in the last 7 days, without the app."],
+        ["Where the numbers come from", "Voters on zzzaps sent in the last 7 days who aren't in the app. Someone counts as in the app if they sent a zzzap or one was sent to them in the last 12 weeks; every other voter is a web voter."],
+        ["Left out", LEFT_OUT],
+        ["Good to know", "Web voting is one vote per browser, so one person on a phone and a laptop counts twice, and someone who clears their browser counts again. It's a close guess, not exact. Web voters aren't in Active people, Came back, or After a month, so those stay about the app."],
+    ],
+    "After a month": [
+        ["What it is", "Of the people who were active in the app 4 weeks ago (28 to 35 days ago), how many were active again in the last 7 days."],
+        ["Where the numbers come from", "Zzzaps sent in those two weeks, matching people across them. Active means sent or voted, same as Active people. Names are never shown, only the count."],
+        ["Left out", `${LEFT_OUT} Web voters.`],
+        ["Good to know", "This is the number a buyer or investor asks for first: do people stick around? Came back shows next week; this shows a month later. While the numbers are small, one person moves it a lot, so watch the trend."],
     ],
     "Vote rate": [
         ["What it is", "Of everyone asked on finished zzzaps, how many voted or answered."],
@@ -219,8 +232,12 @@ function endTime(p) {
     return closed && closed < end ? closed : end;
 }
 
+// 12 weeks, for the trend chart and After a month. The boxes that say
+// "last 30 days" still only use the last 30 days.
+const WEEKS = 12;
+
 async function loadZzzaps() {
-    const since = Timestamp.fromDate(new Date(Date.now() - 30 * DAY));
+    const since = Timestamp.fromDate(new Date(Date.now() - WEEKS * 7 * DAY));
     const snap = await getDocs(query(collection(db, "polls"), where("createdAt", ">=", since)));
     return snap.docs
         .map(d => d.data())
@@ -234,27 +251,59 @@ async function loadZzzaps() {
         );
 }
 
-// Everyone who sent or voted on a zzzap.
-function activePeople(polls) {
+// Everyone in the app over the whole window: anyone who sent a zzzap or had
+// one sent to them. Web voters are never recipients (they vote by link), so a
+// voter outside this set is a web voter. Close, not exact.
+function appPeopleIn(polls) {
     const people = new Set();
     for (const p of polls) {
         people.add(p.creatorId);
-        Object.keys(p.voters || {}).forEach(uid => people.add(uid));
+        (p.recipients || []).forEach(uid => people.add(uid));
     }
     return people;
 }
 
-function buildLiveBoxes(polls) {
+// Everyone in the app who sent or voted on a zzzap.
+function activePeople(polls, appPeople) {
+    const people = new Set();
+    for (const p of polls) {
+        people.add(p.creatorId);
+        Object.keys(p.voters || {}).forEach(uid => { if (appPeople.has(uid)) people.add(uid); });
+    }
+    return people;
+}
+
+// Browsers that voted on the web (see appPeopleIn).
+function webVoters(polls, appPeople) {
+    const voters = new Set();
+    for (const p of polls) {
+        Object.keys(p.voters || {}).forEach(uid => { if (!appPeople.has(uid)) voters.add(uid); });
+    }
+    return voters;
+}
+
+const createdMs = p => toDate(p.createdAt).getTime();
+
+// Zzzaps sent in week `i` back from now (0 = the last 7 days).
+function weekOf(polls, i, now) {
+    return polls.filter(p => createdMs(p) < now - i * 7 * DAY && createdMs(p) >= now - (i + 1) * 7 * DAY);
+}
+
+function buildLiveBoxes(allPolls, appPeople) {
     const now = Date.now();
-    const created = p => toDate(p.createdAt).getTime();
-    const lastWeek = polls.filter(p => created(p) >= now - 7 * DAY);
-    const weekBefore = polls.filter(p => created(p) < now - 7 * DAY && created(p) >= now - 14 * DAY);
+    const notCancelled = allPolls.filter(p => p.status !== "cancelled");
+    const polls = allPolls.filter(p => createdMs(p) >= now - 30 * DAY);
+    const lastWeek = weekOf(polls, 0, now);
+    const weekBefore = weekOf(polls, 1, now);
     const sent = polls.filter(p => p.status !== "cancelled");
 
     // Active people, and how many of last week's came back this week.
-    const activeNow = activePeople(lastWeek.filter(p => p.status !== "cancelled"));
-    const activeBefore = activePeople(weekBefore.filter(p => p.status !== "cancelled"));
+    const activeNow = activePeople(weekOf(notCancelled, 0, now), appPeople);
+    const activeBefore = activePeople(weekOf(notCancelled, 1, now), appPeople);
     const cameBack = [...activeBefore].filter(uid => activeNow.has(uid)).length;
+    const activeMonthAgo = activePeople(weekOf(notCancelled, 4, now), appPeople);
+    const stayed = [...activeMonthAgo].filter(uid => activeNow.has(uid)).length;
+    const web = webVoters(weekOf(notCancelled, 0, now), appPeople);
 
     // Vote rate: of the people asked on finished zzzaps, how many answered.
     let asked = 0;
@@ -280,12 +329,72 @@ function buildLiveBoxes(polls) {
 
     return [
         { title: "Zzzaps sent", value: String(sentNow), detail: `Last 7 days. ${change(sentNow, sentBefore)}` },
-        { title: "Active people", value: String(activeNow.size), detail: "Sent or voted in the last 7 days" },
+        { title: "Active people", value: String(activeNow.size), detail: "In the app. Sent or voted in the last 7 days" },
+        { title: "Web voters", value: String(web.size), detail: "Voted on the web without the app, last 7 days" },
         { title: "Came back", value: percent(cameBack, activeBefore.size), detail: `${cameBack} of ${activeBefore.size} active the week before were active again this week` },
+        { title: "After a month", value: percent(stayed, activeMonthAgo.size), detail: `${stayed} of ${activeMonthAgo.size} active 4 weeks ago were active again this week` },
         { title: "Vote rate", value: percent(answered, asked), detail: `${answered} of ${asked} people asked voted. Finished zzzaps, last 30 days` },
         { title: "Strike vs Storm", value: `${sent.length - storms} / ${storms}`, detail: `Last 30 days. ${photos} with photos` },
         { title: "People per zzzap", value: avgAsked, detail: `Average sent to, last 30 days. ${cancelled} cancelled` },
     ];
+}
+
+// ---------- 12-week trend ----------
+
+// One column per week, oldest on the left. Active people in the app is the
+// bar; web voters ride along in the tooltip and the table, not as a second
+// color. The current week is yellow, the rest gray.
+function buildTrend(allPolls, appPeople) {
+    const now = Date.now();
+    const notCancelled = allPolls.filter(p => p.status !== "cancelled");
+    const weeks = [];
+    for (let i = WEEKS - 1; i >= 0; i--) {
+        const inWeek = weekOf(notCancelled, i, now);
+        weeks.push({
+            start: new Date(now - (i + 1) * 7 * DAY),
+            active: activePeople(inWeek, appPeople).size,
+            web: webVoters(inWeek, appPeople).size,
+            sent: inWeek.length,
+            current: i === 0,
+        });
+    }
+    const max = Math.max(1, ...weeks.map(w => w.active));
+
+    const wrap = el("div", "trend");
+    const chart = el("div", "trend-chart");
+    chart.setAttribute("role", "img");
+    chart.setAttribute("aria-label", `Active people in the app per week, last ${WEEKS} weeks: ${weeks.map(w => w.active).join(", ")}. This week ${weeks[weeks.length - 1].active}.`);
+    for (const w of weeks) {
+        const col = el("div", w.current ? "trend-col current" : "trend-col");
+        col.tabIndex = 0;
+        const plot = el("div", "trend-plot");
+        if (w.current || w.active === max) plot.append(el("div", "trend-cap", String(w.active)));
+        const bar = el("div", "trend-bar");
+        bar.style.height = `${(w.active / max) * 100}%`;
+        plot.append(bar);
+        const tip = el("div", "trend-tip");
+        const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+        tip.append(el("strong", "", `${w.active} active`), el("span", "", plural(w.web, "web voter")), el("span", "", `${plural(w.sent, "zzzap")} sent`), el("span", "trend-tip-week", w.current ? "Last 7 days" : `Week of ${shortDate(w.start)}`));
+        col.append(plot, tip, el("div", "trend-label", w.current ? "Now" : `${w.start.getMonth() + 1}/${w.start.getDate()}`));
+        chart.append(col);
+    }
+    wrap.append(chart);
+
+    // Same numbers as a table, for reading exact values.
+    const details = el("details", "trend-table");
+    details.append(el("summary", "", "Show as a table"));
+    const table = el("table");
+    const head = el("tr");
+    ["Week of", "Active people", "Web voters", "Zzzaps sent"].forEach(h => head.append(el("th", "", h)));
+    table.append(head);
+    for (const w of [...weeks].reverse()) {
+        const row = el("tr");
+        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.web, w.sent].forEach(v => row.append(el("td", "", String(v))));
+        table.append(row);
+    }
+    details.append(table);
+    wrap.append(details);
+    return wrap;
 }
 
 // ---------- Social followers ----------
@@ -422,11 +531,14 @@ async function load() {
     setStatus("Loading…");
     try {
         const polls = await loadZzzaps();
-        els.live.replaceChildren(...buildLiveBoxes(polls).map(box));
+        const appPeople = appPeopleIn(polls);
+        els.live.replaceChildren(...buildLiveBoxes(polls, appPeople).map(box));
+        els.trend.replaceChildren(buildTrend(polls, appPeople));
         loadSocialQuietly();
         loaded = true;
         const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-        setStatus(`Updated ${time}. ${polls.length} zzzaps in the last 30 days.`);
+        const recent = polls.filter(p => createdMs(p) >= Date.now() - 30 * DAY).length;
+        setStatus(`Updated ${time}. ${recent} zzzaps in the last 30 days, ${polls.length} in the last ${WEEKS} weeks.`);
     } catch (err) {
         console.error("[STATS]", err);
         setStatus(`Couldn't load stats: ${err.message}`, "error");
@@ -455,6 +567,7 @@ onAuthStateChanged(auth, user => {
     } else {
         loaded = false;
         els.live.replaceChildren();
+        els.trend.replaceChildren();
         els.socialBoxes.replaceChildren();
         showSocialDue([]);
         setStatus("");
