@@ -61,6 +61,29 @@ const SAMPLE_BOXES = [
     { title: "Reports waiting", value: "2", detail: "oldest 5 hours", needs: "Zak: the reports rule (Moderator role)" },
 ];
 
+// Goals (Stacy, 2026-11-02). Change them here; tell Claude.
+// Active people grows from a fixed start so the goal never moves with the
+// actual number: 29 people the week of Nov 2, 7% more each week after.
+const GOALS = {
+    growth: { start: new Date(2026, 10, 2), startValue: 29, weekly: 0.07, milestone: 100 },
+    rates: { "Came back": 0.60, "After a month": 0.40, "Vote rate": 0.70 },
+};
+
+// Goal for the week containing `when`, or null before the goals started.
+function growthGoal(when) {
+    const g = GOALS.growth;
+    const weeks = Math.floor((when - g.start.getTime()) / (7 * DAY));
+    if (weeks < 0) return null;
+    return Math.round(g.startValue * Math.pow(1 + g.weekly, weeks));
+}
+
+// The week the milestone is reached on the goal path.
+function milestoneDate() {
+    const g = GOALS.growth;
+    const weeks = Math.ceil(Math.log(g.milestone / g.startValue) / Math.log(1 + g.weekly));
+    return new Date(g.start.getTime() + weeks * 7 * DAY);
+}
+
 // Shared note for every live box.
 const LEFT_OUT = "Demo zzzaps, Zzzap Official, tiebreakers, scheduled zzzaps that haven't gone out yet, and zzzaps the server blocked.";
 
@@ -158,6 +181,14 @@ for (const { name } of SOCIAL) {
     ];
 }
 
+// Why each goal is what it is, added to that box's Info.
+const GOAL_INFO = {
+    "Active people": () => `Grow ${Math.round(GOALS.growth.weekly * 100)}% a week, starting from ${GOALS.growth.startValue} the week of ${shortDate(GOALS.growth.start)}. That's about 50 by the end of December and ${GOALS.growth.milestone} the week of ${shortDate(milestoneDate())}. Startup advisors call 5 to 7% a week good and 10% great; Zzzap grew about 11% a week from August to November, but growth gets harder as the numbers get bigger. The goal is set from a fixed start, so it doesn't move when the real number does. The dashed marks on the 12-week chart show it week by week.`,
+    "Came back": () => "60% or more. For social apps, more than half coming back the next week means Zzzap is turning into a habit.",
+    "After a month": () => "40% or more. Most apps lose most people within a month, so keeping 4 in 10 is strong. It's the first number a buyer or investor asks for.",
+    "Vote rate": () => "70% or more. Zzzap's promise is fast answers; below 7 in 10, senders start to feel ignored.",
+};
+
 let loaded = false;
 let loading = false;
 
@@ -171,7 +202,7 @@ function el(tag, className, text) {
 }
 
 // The whole box is a button that opens its explanation.
-function box({ title, value, detail, needs, due }) {
+function box({ title, value, detail, needs, due, goal }) {
     const card = el("button", needs ? "stat-box stat-sample" : due ? "stat-box stat-stale" : "stat-box");
     card.type = "button";
     const head = el("div", "stat-head");
@@ -183,6 +214,14 @@ function box({ title, value, detail, needs, due }) {
     head.append(tags);
     card.append(head, el("div", "stat-value", value));
     if (detail) card.append(el("div", "stat-detail", detail));
+    if (goal) {
+        // Words, not just color: On track / Behind / Too early.
+        const line = el("div", "stat-goal");
+        line.append(el("span", "", goal.text));
+        const kind = goal.met === null ? "wait" : goal.met ? "met" : "behind";
+        line.append(el("span", `stat-goal-tag ${kind}`, goal.met === null ? "Too early" : goal.met ? "On track" : "Behind"));
+        card.append(line);
+    }
     if (needs) card.append(el("div", "stat-needs", `Needs: ${needs}`));
     card.addEventListener("click", () => showInfo(title, Boolean(needs)));
     return card;
@@ -190,7 +229,9 @@ function box({ title, value, detail, needs, due }) {
 
 function showInfo(title, isSample) {
     els.infoTitle.textContent = title;
-    const parts = (INFO[title] || []).map(([heading, text]) => {
+    const entries = [...(INFO[title] || [])];
+    if (GOAL_INFO[title]) entries.push(["The goal", GOAL_INFO[title]()]);
+    const parts = entries.map(([heading, text]) => {
         const section = el("div", "stat-info-section");
         section.append(el("h4", "", heading), el("p", "", text));
         return section;
@@ -324,16 +365,26 @@ function buildLiveBoxes(allPolls, appPeople) {
         ? (sent.reduce((n, p) => n + (p.recipients || []).filter(uid => uid !== p.creatorId).length, 0) / sent.length).toFixed(1)
         : "0";
 
+    const rateGoal = (title, part, whole) => {
+        const target = GOALS.rates[title];
+        return { text: `Goal ${Math.round(target * 100)}%`, met: whole ? part / whole >= target : null };
+    };
+    const thisWeekGoal = growthGoal(now);
+    const peopleGoal = thisWeekGoal === null ? null : {
+        text: `Goal ${thisWeekGoal} this week`,
+        met: activeNow.size >= thisWeekGoal,
+    };
+
     const sentNow = lastWeek.filter(p => p.status !== "cancelled").length;
     const sentBefore = weekBefore.filter(p => p.status !== "cancelled").length;
 
     return [
         { title: "Zzzaps sent", value: String(sentNow), detail: `Last 7 days. ${change(sentNow, sentBefore)}` },
-        { title: "Active people", value: String(activeNow.size), detail: "In the app. Sent or voted in the last 7 days" },
+        { title: "Active people", value: String(activeNow.size), detail: "In the app. Sent or voted in the last 7 days", goal: peopleGoal },
         { title: "Web voters", value: String(web.size), detail: "Voted on the web without the app, last 7 days" },
-        { title: "Came back", value: percent(cameBack, activeBefore.size), detail: `${cameBack} of ${activeBefore.size} active the week before were active again this week` },
-        { title: "After a month", value: percent(stayed, activeMonthAgo.size), detail: `${stayed} of ${activeMonthAgo.size} active 4 weeks ago were active again this week` },
-        { title: "Vote rate", value: percent(answered, asked), detail: `${answered} of ${asked} people asked voted. Finished zzzaps, last 30 days` },
+        { title: "Came back", value: percent(cameBack, activeBefore.size), detail: `${cameBack} of ${activeBefore.size} active the week before were active again this week`, goal: rateGoal("Came back", cameBack, activeBefore.size) },
+        { title: "After a month", value: percent(stayed, activeMonthAgo.size), detail: `${stayed} of ${activeMonthAgo.size} active 4 weeks ago were active again this week`, goal: rateGoal("After a month", stayed, activeMonthAgo.size) },
+        { title: "Vote rate", value: percent(answered, asked), detail: `${answered} of ${asked} people asked voted. Finished zzzaps, last 30 days`, goal: rateGoal("Vote rate", answered, asked) },
         { title: "Strike vs Storm", value: `${sent.length - storms} / ${storms}`, detail: `Last 30 days. ${photos} with photos` },
         { title: "People per zzzap", value: avgAsked, detail: `Average sent to, last 30 days. ${cancelled} cancelled` },
     ];
@@ -344,6 +395,8 @@ function buildLiveBoxes(allPolls, appPeople) {
 // One column per week, oldest on the left. Active people in the app is the
 // bar; web voters ride along in the tooltip and the table, not as a second
 // color. The current week is yellow, the rest gray.
+const TREND_PLOT_PX = 120; // bar area height; matches .trend-plot in index.html
+
 function buildTrend(allPolls, appPeople) {
     const now = Date.now();
     const notCancelled = allPolls.filter(p => p.status !== "cancelled");
@@ -356,14 +409,15 @@ function buildTrend(allPolls, appPeople) {
             web: webVoters(inWeek, appPeople).size,
             sent: inWeek.length,
             current: i === 0,
+            goal: growthGoal(now - i * 7 * DAY),
         });
     }
-    const max = Math.max(1, ...weeks.map(w => w.active));
+    const max = Math.max(1, ...weeks.map(w => Math.max(w.active, w.goal || 0)));
 
     const wrap = el("div", "trend");
     const chart = el("div", "trend-chart");
     chart.setAttribute("role", "img");
-    chart.setAttribute("aria-label", `Active people in the app per week, last ${WEEKS} weeks: ${weeks.map(w => w.active).join(", ")}. This week ${weeks[weeks.length - 1].active}.`);
+    chart.setAttribute("aria-label", `Active people in the app per week, last ${WEEKS} weeks: ${weeks.map(w => w.active).join(", ")}. This week ${weeks[weeks.length - 1].active}${weeks[weeks.length - 1].goal !== null ? `, goal ${weeks[weeks.length - 1].goal}` : ""}.`);
     for (const w of weeks) {
         const col = el("div", w.current ? "trend-col current" : "trend-col");
         col.tabIndex = 0;
@@ -373,9 +427,15 @@ function buildTrend(allPolls, appPeople) {
         // The number floats above the bar so it never takes height from it.
         if (w.current || w.active === max) bar.append(el("div", "trend-cap", String(w.active)));
         plot.append(bar);
+        // Dashed mark at the week's goal (only weeks since goals started).
+        if (w.goal !== null) {
+            const mark = el("div", "trend-goal");
+            mark.style.bottom = `${(w.goal / max) * TREND_PLOT_PX}px`;
+            plot.append(mark);
+        }
         const tip = el("div", "trend-tip");
         const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-        tip.append(el("strong", "", `${w.active} active`), el("span", "", plural(w.web, "web voter")), el("span", "", `${plural(w.sent, "zzzap")} sent`), el("span", "trend-tip-week", w.current ? "Last 7 days" : `Week of ${shortDate(w.start)}`));
+        tip.append(el("strong", "", `${w.active} active`), el("span", "", plural(w.web, "web voter")), el("span", "", `${plural(w.sent, "zzzap")} sent`), ...(w.goal !== null ? [el("span", "", `Goal ${w.goal}`)] : []), el("span", "trend-tip-week", w.current ? "Last 7 days" : `Week of ${shortDate(w.start)}`));
         col.append(plot, tip, el("div", "trend-label", w.current ? "Now" : `${w.start.getMonth() + 1}/${w.start.getDate()}`));
         chart.append(col);
     }
@@ -386,11 +446,11 @@ function buildTrend(allPolls, appPeople) {
     details.append(el("summary", "", "Show as a table"));
     const table = el("table");
     const head = el("tr");
-    ["Week of", "Active people", "Web voters", "Zzzaps sent"].forEach(h => head.append(el("th", "", h)));
+    ["Week of", "Active people", "Goal", "Web voters", "Zzzaps sent"].forEach(h => head.append(el("th", "", h)));
     table.append(head);
     for (const w of [...weeks].reverse()) {
         const row = el("tr");
-        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.web, w.sent].forEach(v => row.append(el("td", "", String(v))));
+        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.goal === null ? "" : w.goal, w.web, w.sent].forEach(v => row.append(el("td", "", String(v))));
         table.append(row);
     }
     details.append(table);
