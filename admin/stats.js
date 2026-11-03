@@ -108,6 +108,12 @@ const INFO = {
         ["Left out", `${LEFT_OUT} Web voters.`],
         ["Good to know", "This is the best sign of whether Zzzap is becoming a habit. With fewer than about 20 people, one person changes it a lot, so watch the trend over several weeks, not one reading."],
     ],
+    "Senders": [
+        ["What it is", "How many different people in the app sent at least one zzzap in the last 7 days, and how much of the sending the busiest sender did."],
+        ["Where the numbers come from", "The sender of every zzzap sent in the last 14 days, split into two weeks. Each person counts once, however many they sent. The busiest sender is whoever sent the most that week; no name is shown."],
+        ["Left out", `${LEFT_OUT} Cancelled zzzaps. Voting doesn't count here; that's in Active people.`],
+        ["Good to know", "Zzzap grows when more people send their own zzzaps to their own people, not just when one person sends a lot. Watch two things: Senders going up, and the busiest sender's share going down. Some weeks the busiest sender will be you."],
+    ],
     "Web voters": [
         ["What it is", "How many different browsers voted on vote.zzzap-app.com in the last 7 days, without the app."],
         ["Where the numbers come from", "Voters on zzzaps sent in the last 7 days who aren't in the app. Someone counts as in the app if they sent a zzzap or one was sent to them in the last 12 weeks; every other voter is a web voter."],
@@ -314,6 +320,13 @@ function activePeople(polls, appPeople) {
     return people;
 }
 
+// How many zzzaps each person sent. Callers pass zzzaps that weren't cancelled.
+function senderCounts(polls) {
+    const counts = new Map();
+    for (const p of polls) counts.set(p.creatorId, (counts.get(p.creatorId) || 0) + 1);
+    return counts;
+}
+
 // Browsers that voted on the web (see appPeopleIn).
 function webVoters(polls, appPeople) {
     const voters = new Set();
@@ -378,9 +391,18 @@ function buildLiveBoxes(allPolls, appPeople) {
     const sentNow = lastWeek.filter(p => p.status !== "cancelled").length;
     const sentBefore = weekBefore.filter(p => p.status !== "cancelled").length;
 
+    // Senders, and how much of this week's sending the busiest one did.
+    const sendersNow = senderCounts(lastWeek.filter(p => p.status !== "cancelled"));
+    const sendersBefore = senderCounts(weekBefore.filter(p => p.status !== "cancelled"));
+    const topSent = Math.max(0, ...sendersNow.values());
+    const sendersDetail = sendersNow.size
+        ? `Sent a zzzap, last 7 days. Busiest sender sent ${topSent} of ${sentNow} (${percent(topSent, sentNow)}). ${change(sendersNow.size, sendersBefore.size)}`
+        : `Sent a zzzap, last 7 days. ${change(0, sendersBefore.size)}`;
+
     return [
         { title: "Zzzaps sent", value: String(sentNow), detail: `Last 7 days. ${change(sentNow, sentBefore)}` },
         { title: "Active people", value: String(activeNow.size), detail: "In the app. Sent or voted in the last 7 days", goal: peopleGoal },
+        { title: "Senders", value: String(sendersNow.size), detail: sendersDetail },
         { title: "Web voters", value: String(web.size), detail: "Voted on the web without the app, last 7 days" },
         { title: "Came back", value: percent(cameBack, activeBefore.size), detail: `${cameBack} of ${activeBefore.size} active the week before were active again this week`, goal: rateGoal("Came back", cameBack, activeBefore.size) },
         { title: "After a month", value: percent(stayed, activeMonthAgo.size), detail: `${stayed} of ${activeMonthAgo.size} active 4 weeks ago were active again this week`, goal: rateGoal("After a month", stayed, activeMonthAgo.size) },
@@ -408,6 +430,7 @@ function buildTrend(allPolls, appPeople) {
             active: activePeople(inWeek, appPeople).size,
             web: webVoters(inWeek, appPeople).size,
             sent: inWeek.length,
+            senders: senderCounts(inWeek).size,
             current: i === 0,
             goal: growthGoal(now - i * 7 * DAY),
         });
@@ -435,7 +458,7 @@ function buildTrend(allPolls, appPeople) {
         }
         const tip = el("div", "trend-tip");
         const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-        tip.append(el("strong", "", `${w.active} active`), el("span", "", plural(w.web, "web voter")), el("span", "", `${plural(w.sent, "zzzap")} sent`), ...(w.goal !== null ? [el("span", "", `Goal ${w.goal}`)] : []), el("span", "trend-tip-week", w.current ? "Last 7 days" : `Week of ${shortDate(w.start)}`));
+        tip.append(el("strong", "", `${w.active} active`), el("span", "", plural(w.web, "web voter")), el("span", "", `${plural(w.sent, "zzzap")} sent`), el("span", "", plural(w.senders, "sender")), ...(w.goal !== null ? [el("span", "", `Goal ${w.goal}`)] : []), el("span", "trend-tip-week", w.current ? "Last 7 days" : `Week of ${shortDate(w.start)}`));
         col.append(plot, tip, el("div", "trend-label", w.current ? "Now" : `${w.start.getMonth() + 1}/${w.start.getDate()}`));
         chart.append(col);
     }
@@ -446,11 +469,11 @@ function buildTrend(allPolls, appPeople) {
     details.append(el("summary", "", "Show as a table"));
     const table = el("table");
     const head = el("tr");
-    ["Week of", "Active people", "Goal", "Web voters", "Zzzaps sent"].forEach(h => head.append(el("th", "", h)));
+    ["Week of", "Active people", "Goal", "Web voters", "Zzzaps sent", "Senders"].forEach(h => head.append(el("th", "", h)));
     table.append(head);
     for (const w of [...weeks].reverse()) {
         const row = el("tr");
-        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.goal === null ? "" : w.goal, w.web, w.sent].forEach(v => row.append(el("td", "", String(v))));
+        [w.current ? "Last 7 days" : shortDate(w.start), w.active, w.goal === null ? "" : w.goal, w.web, w.sent, w.senders].forEach(v => row.append(el("td", "", String(v))));
         table.append(row);
     }
     details.append(table);
