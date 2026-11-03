@@ -12,6 +12,17 @@
          All asset paths are absolute because the page is served from
          /invite/... and /u/..., where relative paths would break. -->
     <meta name="robots" content="noindex">
+    <!-- Link preview for invite and profile links sent in Messages. One
+         static card for every path: the page can't look up who sent it.
+         No og:url, so the preview keeps the link that was actually sent. -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Zzzap">
+    <meta property="og:title" content="You're invited to Zzzap">
+    <meta property="og:description" content="Quick answers from the people you trust. Not a feed. Not a chat.">
+    <meta property="og:image" content="https://zzzap-app.com/assets/marketing/og-card.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="628">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" href="/logo.png">
     <link rel="apple-touch-icon" href="/assets/icons/Icon-60@3x.png">
     <link rel="stylesheet" href="/style.css">
