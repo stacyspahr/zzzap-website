@@ -30,11 +30,7 @@
     <style>
         .landing { text-align: center; margin-bottom: 64px; }
         .landing .logo-stage { margin: 24px auto 32px; }
-        .landing .logo-stage .logo { height: 150px; }
-        .landing .logo-stage .wordgrp,
-        .landing .logo-stage .tag,
-        .landing .logo-stage .zhot,
-        .landing .logo-stage .zimpact { display: none; }
+        .landing .logo-stage .logo { height: 240px; }
         .landing h2 { font-size: 26px; font-weight: 600; margin-bottom: 12px; }
         .landing .lead { font-size: 18px; color: #ccc; max-width: 440px; margin: 0 auto 32px; }
         .landing .hint { font-size: 14px; color: #999; max-width: 400px; margin: 24px auto 0; }
@@ -48,13 +44,12 @@
 <body>
     <div class="container">
         <div class="landing">
-            <!-- The home page's animated logo, bolts only: same markup and
-                 /assets/logo-animation.js, so the two stay in sync. The wordmark,
-                 tagline and Z impact stay in the markup because the script drives
-                 them; CSS above hides them. Its resting state is the finished
-                 bolt, so it still shows with the script blocked. -->
+            <!-- The home page's animated logo: same markup and
+                 /assets/logo-animation.js, so the two stay in sync. Its resting
+                 state is the finished logo, so it still shows with the script
+                 blocked. -->
             <div class="logo-stage" id="zzzap-logo">
-                <svg class="logo" viewBox="0 40 240 270" aria-hidden="true" focusable="false">
+                <svg class="logo" viewBox="-24 26 288 312" aria-hidden="true" focusable="false">
                     <!-- Tightened from the export's "-24 -24 288 360": that framing
                          leaves a quarter of its height empty above the bolts, which the
                          app can afford in a full-screen frame and a page header cannot.
