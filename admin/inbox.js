@@ -181,6 +181,9 @@ async function loadReports() {
             const type = x.type === "comment" ? "comment" : (x.reporterId === "system" ? "system" : "zzzap");
             return {
                 id: d.id, ...x, type,
+                // The server's own reports are already handled; older ones
+                // (before ZZZ-232) were saved without reviewed: true.
+                reviewed: x.reviewed === true || type === "system",
                 at: toMillis(x.timestamp),
                 authorName: await nameFor(type === "comment" ? x.commentAuthorId : x.pollCreatorId),
                 reporterName: await nameFor(x.reporterId),
