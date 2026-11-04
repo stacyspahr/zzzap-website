@@ -1,6 +1,6 @@
 {
   "_about": "The Zzzap voice. One copy for everyone: people read it on the admin site (Marketing and Zzzap Official tabs), and Say It Like Zzzap feeds this same file to the AI. When the app adds, renames, or drops a term, update this file in the same change. Approved by Stacy 2026-10-30.",
-  "updated": "2026-10-30",
+  "updated": "2026-11-04",
   "personality": [
     {
       "trait": "A friend with good energy",
@@ -253,6 +253,16 @@
         "audience",
         "contacts",
         "network"
+      ]
+    },
+    {
+      "say": "note / Notes From Zzzap",
+      "means": "A short card from Zzzap on Home, under the status line: a title, a line or two, at most one button. Never a push. Past ones are in Me, Help, Notes From Zzzap.",
+      "avoid": [
+        "announcement",
+        "message",
+        "alert",
+        "push"
       ]
     }
   ],
