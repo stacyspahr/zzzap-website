@@ -96,19 +96,27 @@ function dateTime(ms) {
     return new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-// Names for account ids, looked up once each.
-const nameCache = new Map();
-async function nameFor(uid) {
+// Accounts by id, looked up once each: name, and whether already suspended.
+const accountCache = new Map();
+async function accountFor(uid) {
     if (!uid || uid === "system") return null;
-    if (nameCache.has(uid)) return nameCache.get(uid);
-    let name = `Account ${uid.slice(0, 6)}`;
+    if (accountCache.has(uid)) return accountCache.get(uid);
+    const account = { name: `Account ${uid.slice(0, 6)}`, banned: false };
     try {
         const snap = await getDoc(doc(db, "users", uid));
-        if (snap.exists()) name = snap.data().displayName || snap.data().realName || name;
-        else name = `${name} (deleted)`;
+        if (snap.exists()) {
+            account.name = snap.data().displayName || snap.data().realName || account.name;
+            account.banned = snap.data().isBanned === true;
+        } else {
+            account.name = `${account.name} (deleted)`;
+        }
     } catch (_) { /* keep the short id */ }
-    nameCache.set(uid, name);
-    return name;
+    accountCache.set(uid, account);
+    return account;
+}
+
+async function nameFor(uid) {
+    return (await accountFor(uid))?.name || null;
 }
 
 // ---------- Sections: Reports · Data Requests ----------
@@ -150,14 +158,22 @@ function sampleReports() {
     return [
         { id: "sample-1", sample: true, type: "comment", reason: "Rude or Mean", note: "",
           commentText: "This is the dumbest question I've seen all week.", question: "Tacos or pizza tonight?",
-          authorName: "Sample Writer", reporterName: "Sample Reporter", at: now - 30 * HOUR, reviewed: false },
+          offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
+          at: now - 30 * HOUR, reviewed: false },
         { id: "sample-2", sample: true, type: "zzzap", reason: "Spam", note: "Same link sent to everyone",
           question: "Win a free phone, tap here", isPhotoPoll: false, alsoBlocked: true,
-          authorName: "Sample Creator", reporterName: "Sample Reporter", at: now - 3 * HOUR, reviewed: false },
+          offenderId: "sample-creator", authorName: "Sample Creator", reporterName: "Sample Reporter",
+          at: now - 3 * HOUR, reviewed: false },
         { id: "sample-3", sample: true, type: "comment", reason: "Harassment", note: "",
           commentText: "Nobody wants you here.", question: "Which color for the front door?",
-          authorName: "Sample Writer", reporterName: "Sample Reporter", at: now - 4 * DAY, reviewed: true,
+          offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
+          at: now - 4 * DAY, reviewed: true,
           reviewAction: "removeContent", reviewedByName: "Stacy", reviewedAt: now - 3 * DAY },
+        { id: "sample-4", sample: true, type: "comment", reason: "Rude or Mean", note: "",
+          commentText: "Worst pick ever, you have no taste.", question: "Best pizza place downtown?",
+          offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
+          at: now - 12 * DAY, reviewed: true,
+          reviewAction: "warn", reviewedByName: "Stacy", reviewedAt: now - 12 * DAY },
     ];
 }
 
@@ -179,13 +195,18 @@ async function loadReports() {
         const rows = await Promise.all(snap.docs.map(async d => {
             const x = d.data();
             const type = x.type === "comment" ? "comment" : (x.reporterId === "system" ? "system" : "zzzap");
+            // The person the report is about: a comment's writer, else the zzzap's creator.
+            const offenderId = (type === "comment" ? x.commentAuthorId : x.pollCreatorId) || null;
+            const offender = await accountFor(offenderId);
             return {
                 id: d.id, ...x, type,
                 // The server's own reports are already handled; older ones
                 // (before ZZZ-232) were saved without reviewed: true.
                 reviewed: x.reviewed === true || type === "system",
                 at: toMillis(x.timestamp),
-                authorName: await nameFor(type === "comment" ? x.commentAuthorId : x.pollCreatorId),
+                offenderId,
+                offenderBanned: offender?.banned === true,
+                authorName: offender?.name || null,
                 reporterName: await nameFor(x.reporterId),
                 reviewedByName: x.reviewedByName || await nameFor(x.reviewedBy),
                 reviewedAt: toMillis(x.reviewedAt),
@@ -198,12 +219,13 @@ async function loadReports() {
     }
 }
 
-function reportCard(r) {
+function reportCard(r, history = []) {
     const card = el("div", "inbox-item");
     const top = el("div", "inbox-item-top");
     const kind = r.type === "comment" ? "Comment" : r.type === "system" ? "Automatic" : "Zzzap";
     top.append(el("span", "inbox-kind", `${kind} · ${r.reason === "auto_moderation" ? "Photo check" : r.reason || "No reason"}`));
     if (r.sample) top.append(el("span", "inbox-sample", "Sample"));
+    if (!r.reviewed && isRepeat(history)) top.append(el("span", "inbox-repeat", "Repeat"));
 
     const age = Date.now() - r.at;
     if (!r.reviewed) {
@@ -232,6 +254,8 @@ function reportCard(r) {
     if (r.reporterName) who.push(`Reported by ${r.reporterName}`);
     if (who.length) card.append(el("div", "surge-meta", who.join(" · ")));
 
+    if (!r.reviewed) card.append(historyBlock(r, history));
+
     if (r.reviewed) {
         const what = r.type === "system" && !r.reviewAction
             ? "Handled automatically"
@@ -258,6 +282,65 @@ function reportCard(r) {
     return card;
 }
 
+// ---------- History: every other report about the same person ----------
+
+/// What happened to a report, in a word or two.
+function outcome(r) {
+    if (!r.reviewed) return "Waiting";
+    if (r.type === "system" && !r.reviewAction) return "Removed automatically";
+    return ACTION_DONE[r.reviewAction] || "Reviewed";
+}
+
+/// Reports that count against someone: content removed, a warning, a
+/// suspension, or the server's photo check pulling their photo.
+function countsAgainst(r) {
+    return r.type === "system" || ["removeContent", "warn", "suspend"].includes(r.reviewAction);
+}
+
+/// Repeat offender: anything held against them before, or 2+ other reports.
+function isRepeat(history) {
+    return history.some(countsAgainst) || history.length >= 2;
+}
+
+function historyBlock(r, history) {
+    const box = el("div", "inbox-history");
+    if (!r.offenderId) return box;
+    if (r.offenderBanned) box.append(el("div", "inbox-history-line inbox-late", "This account is already suspended."));
+    if (!history.length) {
+        box.append(el("div", "inbox-history-line", "First report about them."));
+        return box;
+    }
+    const tally = {};
+    for (const h of history) tally[outcome(h)] = (tally[outcome(h)] || 0) + 1;
+    const parts = Object.entries(tally).map(([what, n]) => `${n} ${what.toLowerCase()}`);
+    const n = history.length;
+    box.append(el("div", "inbox-history-line",
+        `${n} other report${n === 1 ? "" : "s"} about them: ${parts.join(", ")}`));
+
+    const toggle = el("button", "inbox-link", "See History");
+    toggle.type = "button";
+    const list = el("div", "inbox-history-list");
+    list.hidden = true;
+    for (const h of [...history].sort((a, b) => b.at - a.at)) {
+        const what = h.type === "comment" ? `“${h.commentText || ""}”`
+            : h.type === "zzzap" ? (h.question || "A zzzap")
+            : (h.note || "Photo check");
+        const kind = h.type === "comment" ? "Comment" : h.type === "zzzap" ? "Zzzap" : "Photo check";
+        const reason = h.type === "system" ? "" : ` · ${h.reason || "No reason"}`;
+        const row = el("div", "inbox-history-row");
+        row.append(el("span", "inbox-history-when", shortDate(h.at)));
+        row.append(el("span", "inbox-history-what", `${kind}${reason} · ${outcome(h)}`));
+        row.append(el("span", "inbox-history-text", what));
+        list.append(row);
+    }
+    toggle.addEventListener("click", () => {
+        list.hidden = !list.hidden;
+        toggle.textContent = list.hidden ? "See History" : "Hide History";
+    });
+    box.append(toggle, list);
+    return box;
+}
+
 async function actOnReport(r, action, label) {
     if (r.sample) { setStatus("That's a sample. Real reports show here once Zak's piece is in.", ""); return; }
     if (action === "suspend" && !confirm(`Suspend ${r.authorName || "this account"}? They won't be able to send, vote or comment.`)) return;
@@ -277,8 +360,17 @@ function renderReports({ rows, sample }) {
     els.reportsSample.hidden = !sample;
     const open = rows.filter(r => !r.reviewed).sort((a, b) => a.at - b.at); // oldest first
     const done = rows.filter(r => r.reviewed).sort((a, b) => (b.reviewedAt || b.at) - (a.reviewedAt || a.at)).slice(0, 30);
-    els.reportsOpen.replaceChildren(...(open.length ? open.map(reportCard) : [el("p", "surge-muted", "Nothing waiting.")]));
-    els.reportsDone.replaceChildren(...(done.length ? done.map(reportCard) : [el("p", "surge-muted", "None yet.")]));
+    // Every report about the same person, for each card's history line.
+    // (Covers the 200 newest reports the page loads; plenty for now.)
+    const byOffender = new Map();
+    for (const r of rows) {
+        if (!r.offenderId) continue;
+        if (!byOffender.has(r.offenderId)) byOffender.set(r.offenderId, []);
+        byOffender.get(r.offenderId).push(r);
+    }
+    const historyOf = r => (byOffender.get(r.offenderId) || []).filter(h => h.id !== r.id);
+    els.reportsOpen.replaceChildren(...(open.length ? open.map(r => reportCard(r, historyOf(r))) : [el("p", "surge-muted", "Nothing waiting.")]));
+    els.reportsDone.replaceChildren(...(done.length ? done.map(r => reportCard(r)) : [el("p", "surge-muted", "None yet.")]));
     return sample ? 0 : open.length;
 }
 
