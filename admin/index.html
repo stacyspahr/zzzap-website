@@ -406,6 +406,23 @@
         .surge-chip { background: rgba(245,197,24,.15); color: #f5c518; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; }
         .surge-add-row { display: flex; gap: 8px; }
 
+        /* Inbox tab (inbox.js) */
+        .inbox-top { display: flex; align-items: center; gap: 12px; max-width: 808px; }
+        .inbox-top .official-sections { margin-bottom: 16px; }
+        .inbox-top .btn-secondary { margin: 0 0 16px auto; }
+        #inbox-status { max-width: 808px; }
+        .inbox-count { margin-left: 6px; font-weight: 700; }
+        .inbox-item { padding: 14px 0; border-top: 1px solid #222; }
+        .inbox-item-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+        .inbox-kind { color: #fff; font-weight: 600; font-size: 14px; }
+        .inbox-when { color: #888; font-size: 12px; margin-left: auto; }
+        .inbox-late { color: #ff453a; }
+        .inbox-sample { color: #888; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #333; border-radius: 6px; padding: 1px 6px; }
+        .inbox-sample-note { color: #888; font-size: 13px; background: #161616; border: 1px solid #222; border-radius: 10px; padding: 10px 14px; margin: 0 0 18px; }
+        .inbox-quote { color: #ddd; font-size: 14px; margin-bottom: 4px; }
+        .inbox-done-line { color: #aaa; font-size: 13px; margin-top: 6px; }
+        .inbox-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
         /* Stats tab (stats.js) */
         .stats-panel-card { max-width: 760px; }
         .stats-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -616,6 +633,7 @@
             <div class="admin-tabs" role="tablist">
                 <button type="button" class="admin-tab" role="tab" data-tab="send">Zzzap Official</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="inbox">Inbox</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="stats">Stats</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="marketing">Marketing</button>
             </div>
@@ -903,6 +921,40 @@
                 </div>
             </div>
             </div> <!-- /surge panel -->
+
+            <div class="admin-panel" data-panel="inbox" hidden>
+            <!-- Inbox: someone is waiting on us. Reports and Data Requests (inbox.js) -->
+            <div class="inbox-top">
+                <div class="admin-tabs official-sections" role="tablist">
+                    <button type="button" class="admin-tab" role="tab" data-inbox-section="reports">Reports</button>
+                    <button type="button" class="admin-tab" role="tab" data-inbox-section="requests">Data Requests</button>
+                </div>
+                <button type="button" id="inbox-refresh" class="btn-secondary">Refresh</button>
+            </div>
+            <div id="inbox-status" class="status-message"></div>
+
+            <div class="inbox-section" data-inbox-section="reports">
+            <div class="card surge-panel-card">
+                <p id="reports-sample" class="inbox-sample-note" hidden>Sample reports, made up. Real ones show here once Zak's piece is in.</p>
+                <h3 class="surge-h3">Needs action</h3>
+                <p class="surge-muted" style="margin-bottom: 4px;">Oldest first. The goal is under 24 hours.</p>
+                <div id="reports-open"></div>
+                <h3 class="surge-h3">Done</h3>
+                <div id="reports-done"></div>
+            </div>
+            </div>
+
+            <div class="inbox-section" data-inbox-section="requests" hidden>
+            <div class="card surge-panel-card">
+                <p id="requests-sample" class="inbox-sample-note" hidden>Sample requests, made up. Real ones show here once Zak's piece is in.</p>
+                <h3 class="surge-h3">Needs action</h3>
+                <p class="surge-muted" style="margin-bottom: 4px;">From Me, Request My Data. Each one is due 30 days after it's asked.</p>
+                <div id="requests-open"></div>
+                <h3 class="surge-h3">Done</h3>
+                <div id="requests-done"></div>
+            </div>
+            </div>
+            </div> <!-- /inbox panel -->
 
             <div class="admin-panel" data-panel="stats" hidden>
             <!-- Stats: totals only, never names (stats.js). One exception:
@@ -2310,6 +2362,7 @@
     </script>
     <script type="module" src="notes.js?v=7"></script>
     <script type="module" src="surge.js?v=2"></script>
+    <script type="module" src="inbox.js?v=1"></script>
     <script type="module" src="stats.js?v=8"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>
