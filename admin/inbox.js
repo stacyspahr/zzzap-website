@@ -45,8 +45,8 @@ const els = {
 const ACTION_DONE = {
     dismiss: "Dismissed",
     removeContent: "Removed",
-    warn: "Warned",
-    suspend: "Account suspended",
+    warn: "Removed and warned",
+    suspend: "Removed and suspended",
 };
 
 // ---------- Small helpers (text only, never HTML from data) ----------
@@ -173,7 +173,7 @@ function sampleReports() {
           commentText: "Worst pick ever, you have no taste.", question: "Best pizza place downtown?",
           offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
           at: now - 12 * DAY, reviewed: true,
-          reviewAction: "warn", reviewedByName: "Stacy", reviewedAt: now - 12 * DAY },
+          reviewAction: "warn", reviewedByName: "Stacy", reviewedAt: now - 12 * DAY, warningSeenAt: now - 11 * DAY },
     ];
 }
 
@@ -259,7 +259,8 @@ function reportCard(r, history = []) {
     if (r.reviewed) {
         const what = r.type === "system" && !r.reviewAction
             ? "Handled automatically"
-            : `${ACTION_DONE[r.reviewAction] || "Reviewed"}${r.reviewedByName ? ` by ${r.reviewedByName}` : ""}${r.reviewedAt ? `, ${dateTime(r.reviewedAt)}` : ""}`;
+            : `${ACTION_DONE[r.reviewAction] || "Reviewed"}${r.reviewedByName ? ` by ${r.reviewedByName}` : ""}${r.reviewedAt ? `, ${dateTime(r.reviewedAt)}` : ""}`
+              + (r.reviewAction === "warn" ? (r.warningSeenAt ? ` · seen ${shortDate(toMillis(r.warningSeenAt))}` : " · not seen yet") : "");
         card.append(el("div", "inbox-done-line", what));
         return card;
     }
@@ -343,8 +344,10 @@ function historyBlock(r, history) {
 
 async function actOnReport(r, action, label) {
     if (r.sample) { setStatus("That's a sample. Real reports show here once Zak's piece is in.", ""); return; }
-    if (action === "suspend" && !confirm(`Suspend ${r.authorName || "this account"}? They won't be able to send, vote or comment.`)) return;
+    const what = r.type === "comment" ? "comment" : "zzzap";
+    if (action === "suspend" && !confirm(`Suspend ${r.authorName || "this account"}? The ${what} is removed too, and they won't be able to send, vote or comment.`)) return;
     if (action === "removeContent" && !confirm(`${label}? It disappears for everyone.`)) return;
+    if (action === "warn" && !confirm(`Warn ${r.authorName || "them"}? The ${what} is removed, and they get a note on Home saying why, with a link to the guidelines. It never says who reported it.`)) return;
     try {
         await httpsCallable(functions, "reviewReport")({ reportId: r.id, action });
         setStatus(`${ACTION_DONE[action]}.`, "success");
