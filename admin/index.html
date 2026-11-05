@@ -488,6 +488,21 @@
         .trend-table th, .trend-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #222; }
         .trend-table th { color: #777; font-weight: 600; font-size: 12px; }
 
+        /* Devices (stats.js countCard). One series per card, so no legend.
+           Newest Zzzap version yellow, the rest gray. */
+        .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+        .device-card { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 14px 16px; }
+        .device-card .stat-title { margin-bottom: 10px; }
+        .device-row { padding: 6px 0; }
+        .device-label { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-bottom: 6px; }
+        .device-name { color: #ddd; }
+        .device-count { color: #888; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .device-track { height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+        .device-bar { height: 100%; min-width: 4px; background: #6e6e6e; border-radius: 4px; }
+        .device-row:hover .device-bar { background: #888; }
+        .device-row.highlight .device-name { color: #fff; font-weight: 600; }
+        .device-row.highlight .device-bar { background: #f5c518; }
+
         /* Social follower counts, typed in by hand (stats.js) */
         .stat-due { color: #111; background: #f5c518; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 100px; padding: 2px 8px; }
         .stat-box.stat-stale { border-color: #f5c518; }
@@ -2373,7 +2388,7 @@
     <script type="module" src="notes.js?v=7"></script>
     <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="inbox.js?v=4"></script>
-    <script type="module" src="stats.js?v=8"></script>
+    <script type="module" src="stats.js?v=9"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>
 </html>

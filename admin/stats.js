@@ -650,26 +650,32 @@ async function loadDevices() {
     return devices;
 }
 
-// One small table: each value, how many people, what share.
-function countTable(heading, devices, valueOf, sort) {
+// One card per question: each value as a bar, how many people, what share.
+// One series, so no legend; the newest Zzzap version is yellow (like the
+// current week in the trend), everything else gray.
+function countCard(heading, devices, valueOf, sort, highlight) {
     const counts = new Map();
     for (const d of devices) {
         const value = valueOf(d);
         counts.set(value, (counts.get(value) || 0) + 1);
     }
     const rows = [...counts.entries()].sort(sort || ((a, b) => b[1] - a[1]));
-    const wrap = el("div", "trend-table");
-    const table = el("table");
-    const head = el("tr");
-    [heading, "People", "Share"].forEach(h => head.append(el("th", "", h)));
-    table.append(head);
+    const card = el("div", "device-card");
+    card.append(el("div", "stat-title", heading));
     for (const [value, count] of rows) {
-        const row = el("tr");
-        [value, count, percent(count, devices.length)].forEach(v => row.append(el("td", "", String(v))));
-        table.append(row);
+        const share = percent(count, devices.length);
+        const row = el("div", "device-row" + (highlight && value === highlight ? " highlight" : ""));
+        row.title = `${value}: ${count} ${count === 1 ? "person" : "people"}, ${share}`;
+        const label = el("div", "device-label");
+        label.append(el("span", "device-name", String(value)), el("span", "device-count", `${count} · ${share}`));
+        const track = el("div", "device-track");
+        const bar = el("div", "device-bar");
+        bar.style.width = `${(count / devices.length) * 100}%`;
+        track.append(bar);
+        row.append(label, track);
+        card.append(row);
     }
-    wrap.append(table);
-    return wrap;
+    return card;
 }
 
 function buildDevices(devices) {
@@ -677,12 +683,14 @@ function buildDevices(devices) {
         return [el("p", "surge-muted", "No phones yet. They show up after people open a Zzzap build from Nov 3 or later.")];
     }
     const newestFirst = (a, b) => compareVersions(b[0], a[0]);
-    const tables = [
-        countTable("Zzzap version", devices, d => d.appVersion, newestFirst),
-        countTable("iOS version", devices, d => d.iosVersion, newestFirst),
-        countTable("Phone", devices, d => modelName(d.model)),
-        countTable("Installed from", devices, d => d.channel),
-    ];
+    const newestApp = [...devices].map(d => d.appVersion).sort(compareVersions).pop();
+    const grid = el("div", "device-grid");
+    grid.append(
+        countCard("Zzzap version", devices, d => d.appVersion, newestFirst, newestApp),
+        countCard("iOS version", devices, d => d.iosVersion, newestFirst),
+        countCard("Phone", devices, d => modelName(d.model)),
+        countCard("Installed from", devices, d => d.channel),
+    );
 
     // Each person, oldest Zzzap version first, so who needs to update is on top.
     const details = el("details", "trend-table");
@@ -699,7 +707,7 @@ function buildDevices(devices) {
         table.append(row);
     }
     details.append(table);
-    return [...tables, details];
+    return [grid, details];
 }
 
 async function refreshDevices() {
