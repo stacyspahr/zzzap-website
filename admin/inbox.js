@@ -230,6 +230,18 @@ async function loadReports() {
     }
 }
 
+// Claude's suggestion (functions/reportAdvice.js): help thinking, never deciding.
+const SUGGESTED = { dismiss: "Dismiss", removeContent: "Remove", warn: "Warn", suspend: "Suspend" };
+function suggestionBlock(r) {
+    const s = r.aiSuggestion;
+    const box = el("div", "inbox-suggestion");
+    box.append(el("div", "inbox-suggestion-label", "Suggested by Claude"));
+    box.append(el("div", "inbox-suggestion-action",
+        `${SUGGESTED[s.action] || s.action}${s.judgmentCall ? " · judgment call" : ""}`));
+    box.append(el("div", "inbox-suggestion-reason", s.reason || ""));
+    return box;
+}
+
 function reportCard(r, history = []) {
     const card = el("div", "inbox-item");
     card.dataset.reportId = r.id;
@@ -266,7 +278,13 @@ function reportCard(r, history = []) {
     if (r.reporterName) who.push(`Reported by ${r.reporterName}`);
     if (who.length) card.append(el("div", "surge-meta", who.join(" · ")));
 
+    if (!r.reviewed && r.aiSuggestion) card.append(suggestionBlock(r));
     if (!r.reviewed) card.append(historyBlock(r, history));
+    if (!r.reviewed && r.reporterHistoryText) {
+        const line = el("div", r.reportsALot ? "inbox-history-line inbox-late" : "inbox-history-line",
+            `${r.reportsALot ? "Reports a lot. " : ""}${r.reporterName || "The reporter"}: ${r.reporterHistoryText}`);
+        card.append(line);
+    }
 
     if (r.reviewed) {
         const what = r.type === "system" && !r.reviewAction
@@ -408,6 +426,34 @@ function renderReports({ rows, sample }) {
         byOffender.get(r.offenderId).push(r);
     }
     const historyOf = r => (byOffender.get(r.offenderId) || []).filter(h => h.id !== r.id);
+    // What each reporter has filed: reporting someone over and over for
+    // nothing is harassment too (Stacy, 11/6). Same rule as the server email.
+    const byReporter = new Map();
+    for (const r of rows) {
+        if (!r.reporterId || r.type === "system") continue;
+        if (!byReporter.has(r.reporterId)) byReporter.set(r.reporterId, []);
+        byReporter.get(r.reporterId).push(r);
+    }
+    for (const r of open) {
+        const filed = (byReporter.get(r.reporterId) || []).filter(h => h.id !== r.id);
+        if (!filed.length) { r.reporterHistoryText = "first report they've filed"; continue; }
+        const tally = {};
+        let dismissed = 0, aboutThem = 0, dismissedAboutThem = 0;
+        for (const h of filed) {
+            const o = outcome(h).toLowerCase();
+            tally[o] = (tally[o] || 0) + 1;
+            if (h.reviewAction === "dismiss") dismissed++;
+            if (h.offenderId && h.offenderId === r.offenderId) {
+                aboutThem++;
+                if (h.reviewAction === "dismiss") dismissedAboutThem++;
+            }
+        }
+        const n = filed.length;
+        r.reporterHistoryText = `${n} other report${n === 1 ? "" : "s"} filed: `
+            + Object.entries(tally).map(([o, c]) => `${c} ${o}`).join(", ")
+            + (aboutThem ? `. ${aboutThem} about this same person` : "");
+        r.reportsALot = (n >= 3 && dismissed / n >= 0.6) || dismissedAboutThem >= 2;
+    }
     els.reportsOpen.replaceChildren(...(open.length ? open.map(r => reportCard(r, historyOf(r))) : [el("p", "surge-muted", "Nothing waiting.")]));
     els.reportsDone.replaceChildren(...(done.length ? done.map(r => reportCard(r)) : [el("p", "surge-muted", "None yet.")]));
     if (!sample) focusLinkedReport(rows);
