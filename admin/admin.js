@@ -37,6 +37,7 @@ const functions = getFunctions(app);
 // Auth flow
 // ───────────────────────────────────────────────────────────────
 const signinView = document.getElementById("signin-view");
+const noAccessView = document.getElementById("no-access-view");
 const adminView = document.getElementById("admin-view");
 const signinForm = document.getElementById("signin-form");
 const signinBtn = document.getElementById("signin-btn");
@@ -105,18 +106,44 @@ document.getElementById("change-password-link").addEventListener("click", async 
 let recentUnsub = null;
 let queueUnsub = null;
 
-// Limited roles (Stacy 2026-10-19). config/adminRoles maps an account
-// ID to a role, set by hand in the Firebase console. Anyone not listed
-// gets every tab, same as before. This only decides which tabs show;
-// the server rules are what actually keep private data private.
-const ROLE_TABS = { marketing: ["marketing"] };
+document.getElementById("no-access-signout").addEventListener("click", () => signOut(auth));
+
+// Roles (Stacy 2026-11-06). One role per person:
+//   owner      Stacy, Zak: everything
+//   moderator  the Inbox only
+//   marketing  Brand only (Haley)
+// Planned source (Zak): admins/{uid}.role, readable by that person. Until his
+// rule is in, the old config/adminRoles map still works, and an account with
+// no role counts as an owner only if it can read reports (an admins-only read).
+// Anyone else gets "No access". Hiding tabs is a convenience; the server rules
+// are what actually keep private data private.
+const ROLE_TABS = { owner: null, moderator: ["today", "inbox"], marketing: ["marketing"] };
 
 async function roleFor(uid) {
     try {
+        const own = await getDoc(doc(db, "admins", uid));
+        if (own.exists()) return ROLE_TABS.hasOwnProperty(own.data().role) ? own.data().role : "owner";
+        // Readable but missing: not on the list (the old map may still say marketing).
+        return await legacyRole(uid);
+    } catch (_) {
+        // Zak's self-read rule isn't in yet.
+        const legacy = await legacyRole(uid);
+        if (legacy) return legacy;
+        try {
+            await getDocs(query(collection(db, "reports"), limit(1)));
+            return "owner";
+        } catch (err) {
+            return null;
+        }
+    }
+}
+
+async function legacyRole(uid) {
+    try {
         const snap = await getDoc(doc(db, "config", "adminRoles"));
-        return snap.exists() ? snap.data()[uid] || null : null;
+        const role = snap.exists() ? snap.data()[uid] : null;
+        return ROLE_TABS.hasOwnProperty(role) ? role : null;
     } catch (err) {
-        console.warn("[ADMIN] couldn't read roles", err);
         return null;
     }
 }
@@ -124,18 +151,27 @@ async function roleFor(uid) {
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const role = await roleFor(user.uid);
-        window.adminTabs.allow(ROLE_TABS[role] || null);
         signinView.classList.add("hidden");
+        if (!role) {
+            // Signed in but not on the list: no tabs at all.
+            noAccessView.classList.remove("hidden");
+            adminView.classList.add("hidden");
+            document.getElementById("no-access-email").textContent = user.email || "This account";
+            return;
+        }
+        noAccessView.classList.add("hidden");
+        window.adminTabs.allow(ROLE_TABS[role]);
         adminView.classList.remove("hidden");
         userName.textContent = user.email || user.displayName || "Admin";
         console.log("[ADMIN] signed in as", user.uid, "— send this UID to Zak for the allowlist");
-        if (ROLE_TABS[role]) return; // no Send tab, so no Official listeners
+        if (role !== "owner") return; // no Reach People tab, so no Official listeners
         startRecentListener();
         startQueueListener();
         updateRecipientsHint();
     } else {
         signinView.classList.remove("hidden");
         adminView.classList.add("hidden");
+        noAccessView.classList.add("hidden");
         if (recentUnsub) { recentUnsub(); recentUnsub = null; }
         if (queueUnsub) { queueUnsub(); queueUnsub = null; }
         userNameCache.clear();

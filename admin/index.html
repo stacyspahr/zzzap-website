@@ -408,6 +408,17 @@
         .surge-chip { background: rgba(245,197,24,.15); color: #f5c518; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; }
         .surge-add-row { display: flex; gap: 8px; }
 
+        /* Today tab (today.js) */
+        .today-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
+        .today-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; background: #161616; border: 1px solid #222; border-radius: 12px; padding: 12px 14px; }
+        .today-row:hover { border-color: #f5c518; }
+        .today-recent-row { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid #222; }
+        .today-row-title { color: #fff; font-size: 15px; font-weight: 600; }
+        .today-row-detail { color: #888; font-size: 13px; font-weight: 400; }
+        .today-waiting { margin: 0; padding-left: 18px; }
+        .today-waiting li { padding: 4px 0; }
+        .today-waiting li span { display: block; }
+
         /* Inbox tab (inbox.js) */
         .inbox-top { display: flex; align-items: center; gap: 12px; max-width: 808px; }
         .inbox-top .official-sections { margin-bottom: 16px; }
@@ -454,7 +465,12 @@
             .admin-tabs { display: flex; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
             .admin-tab { flex-shrink: 0; padding: 8px 14px; }
             .inbox-top { flex-wrap: wrap; }
-            .card.surge-panel-card { padding: 16px; }
+            .card { padding: 16px; border-radius: 14px; }
+            .admin-grid { gap: 16px; }
+            .stats-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+            .stat-value { font-size: 24px; }
+            input, select, textarea { font-size: 16px; } /* no zoom-on-focus in iPhone Safari */
+            .templates-card { position: static; }
             .inbox-quote { font-size: 17px; line-height: 1.35; }
             .surge-meta, .inbox-history-line, .inbox-done-line { font-size: 14px; }
             .inbox-when { margin-left: 0; flex-basis: 100%; }
@@ -657,7 +673,7 @@
 
         <!-- Pre-auth state -->
         <div id="signin-view" class="card signin-card">
-            <h1>⚡⚡ Zzzap Admin Console</h1>
+            <h1>Zzzap Admin Console</h1>
             <p>Sign in to send zzzaps as Zzzap Official.</p>
             <form id="signin-form" style="max-width: 320px; margin: 0 auto;">
                 <div class="form-row">
@@ -673,10 +689,17 @@
             <p style="margin: 12px 0 0;"><a class="main-site-link" href="../">Back to the main site</a></p>
         </div>
 
+        <!-- Signed in, but no role: nothing to see (Stacy 11/6). -->
+        <div id="no-access-view" class="card signin-card hidden">
+            <h1>No access</h1>
+            <p><span id="no-access-email">This account</span> isn't on the admin list. If that's a mistake, ask Stacy or Zak to add you.</p>
+            <button type="button" id="no-access-signout" class="btn-primary" style="width: 100%; max-width: 320px; padding: 14px;">Sign Out</button>
+        </div>
+
         <!-- Authed state -->
         <div id="admin-view" class="hidden">
             <div class="admin-header">
-                <div class="admin-title"><span class="bolt">⚡⚡</span>Zzzap Admin Console</div>
+                <div class="admin-title">Zzzap Admin Console</div>
                 <div class="admin-identity">
                     <a class="main-site-link" href="../">Main site</a>
                     <a class="main-site-link" href="#" id="change-password-link">Change password</a>
@@ -688,14 +711,32 @@
             <!-- Tabs, remembered per browser. "send" is Zzzap Official (the
                  old name is kept as the id so saved tabs and #send links work). -->
             <div class="admin-tabs" role="tablist">
-                <button type="button" class="admin-tab" role="tab" data-tab="send">Zzzap Official</button>
-                <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
+                <!-- Tabs by job (Stacy 11/6). Ids stay the same so saved links work. -->
+                <button type="button" class="admin-tab" role="tab" data-tab="today">Today</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="inbox">Inbox</button>
-                <button type="button" class="admin-tab" role="tab" data-tab="stats">Stats</button>
-                <button type="button" class="admin-tab" role="tab" data-tab="marketing">Marketing</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="send">Reach People</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="stats">Numbers</button>
+                <button type="button" class="admin-tab" role="tab" data-tab="marketing">Brand</button>
             </div>
 
-            <div class="admin-panel" data-panel="send">
+            <div class="admin-panel" data-panel="today" hidden>
+            <!-- Today: the home page (today.js) -->
+            <div class="card surge-panel-card">
+                <div class="stats-top">
+                    <h3 class="surge-h3" style="margin: 0;">Needs you</h3>
+                    <button type="button" id="today-refresh" class="btn-secondary">Refresh</button>
+                </div>
+                <div id="today-needs" class="today-list"></div>
+                <h3 class="surge-h3">Recently handled</h3>
+                <div id="today-recent" class="today-list"></div>
+                <h3 class="surge-h3">Waiting on Zak</h3>
+                <p class="surge-muted" style="margin-bottom: 8px;">Built on our side. Each one turns on when his part is in.</p>
+                <ul id="today-waiting" class="today-waiting"></ul>
+            </div>
+            </div>
+
+            <div class="admin-panel" data-panel="send" hidden>
             <!-- Zzzap Official has two sections: Notes (notes.js) and Zzzaps. -->
             <div class="admin-tabs official-sections" role="tablist">
                 <button type="button" class="admin-tab" role="tab" data-section="notes">Notes</button>
@@ -1081,8 +1122,7 @@
                     <div id="social-status" class="status-message"></div>
                 </form>
 
-                <h3 class="surge-h3">Not counted yet</h3>
-                <ul id="stats-sample" class="stats-not-built"></ul>
+
             </div>
 
             <!-- Opens when a box is clicked (stats.js fills it in) -->
@@ -1105,7 +1145,7 @@
     </div>
 
 
-    <script type="module" src="admin.js?v=1"></script>
+    <script type="module" src="admin.js?v=2"></script>
     <script>
         // Tabs: show one panel, remember the choice (and allow #surge links).
         // adminTabs.allow(names) limits which tabs show (used for roles like
@@ -1127,7 +1167,7 @@
             function startTab() {
                 // "#inbox/<reportId>" (the report email's link) opens the Inbox.
                 const fromHash = location.hash.replace("#", "").split("/")[0];
-                return allowed.includes(fromHash) ? fromHash : (localStorage.getItem("adminTab") || "send");
+                return allowed.includes(fromHash) ? fromHash : "today";
             }
             tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.tab)));
             window.adminTabs = {
@@ -1157,10 +1197,11 @@
             show(localStorage.getItem("officialSection") === "zzzaps" ? "zzzaps" : "notes");
         })();
     </script>
+    <script type="module" src="today.js?v=1"></script>
     <script type="module" src="notes.js?v=8"></script>
     <script type="module" src="surge.js?v=2"></script>
     <script type="module" src="inbox.js?v=9"></script>
-    <script type="module" src="stats.js?v=10"></script>
+    <script type="module" src="stats.js?v=11"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>
 </html>

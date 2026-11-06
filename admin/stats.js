@@ -28,7 +28,6 @@ const els = {
     trend: document.getElementById("stats-trend"),
     trendNote: document.getElementById("stats-trend-note"),
     devices: document.getElementById("stats-devices"),
-    sample: document.getElementById("stats-sample"),
     status: document.getElementById("stats-status"),
     refresh: document.getElementById("stats-refresh"),
     infoDialog: document.getElementById("stats-info"),
@@ -53,17 +52,6 @@ const SOCIAL = [
     { id: "facebook", name: "Facebook" },
 ];
 const SOCIAL_STALE_DAYS = 7;
-
-// Numbers we want but can't count yet. No made-up values (admin clean-out,
-// Stacy 11/6): just what each one needs. These move to Today's "Waiting on
-// Zak" list once that page exists.
-const NOT_BUILT = [
-    { title: "New signups", needs: "Zak: a server count of new accounts" },
-    { title: "Total accounts", needs: "Zak: a server count of all accounts" },
-    { title: "Rating asks", needs: "App build to count each ask, plus a rule from Zak" },
-    { title: "Invites opened and joined", needs: "Zak: invite links are server only" },
-    { title: "Power purchases", needs: "Zak: a purchase count, or App Store Connect for now" },
-];
 
 // Goals (Stacy, 2026-11-02). Change them here; tell Claude.
 // Active people grows from a fixed start so the goal never moves with the
@@ -844,11 +832,7 @@ function loadSocialQuietly() {
 // ---------- Render ----------
 
 function renderSample() {
-    els.sample.replaceChildren(...NOT_BUILT.map(n => {
-        const row = document.createElement("li");
-        row.textContent = `${n.title}: ${n.needs}`;
-        return row;
-    }));
+
 }
 
 async function load() {
