@@ -13,7 +13,7 @@
 import { getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import {
-    getFirestore, collection, query, orderBy, limit, getDocs, getDoc, doc
+    getFirestore, collection, query, orderBy, limit, getDocs, getDoc, doc, updateDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
 
@@ -35,6 +35,8 @@ const els = {
     reportsDone: document.getElementById("reports-done"),
     requestsOpen: document.getElementById("requests-open"),
     requestsDone: document.getElementById("requests-done"),
+    feedbackOpen: document.getElementById("feedback-open"),
+    feedbackDone: document.getElementById("feedback-done"),
     sectionButtons: [...document.querySelectorAll(".admin-tab[data-inbox-section]")],
     sections: [...document.querySelectorAll(".inbox-section")],
 };
@@ -139,7 +141,7 @@ function showSection(name) {
     localStorage.setItem("inboxSection", name);
 }
 els.sectionButtons.forEach(b => b.addEventListener("click", () => showSection(b.dataset.inboxSection)));
-showSection(localStorage.getItem("inboxSection") === "requests" ? "requests" : "reports");
+showSection(["requests", "feedback"].includes(localStorage.getItem("inboxSection")) ? localStorage.getItem("inboxSection") : "reports");
 
 /// Count shown on a section button, e.g. "Reports 2".
 function setSectionCount(name, count) {
@@ -423,7 +425,13 @@ function renderReports({ rows, sample }) {
 /// The report id in "#inbox/<id>", or null.
 function linkedReportId() {
     const [tab, id] = location.hash.replace("#", "").split("/");
-    return tab === "inbox" && id ? decodeURIComponent(id) : null;
+    return tab === "inbox" && id && id !== "feedback" ? decodeURIComponent(id) : null;
+}
+
+/// The feedback id in "#inbox/feedback/<id>" (the feedback email's link).
+function linkedFeedbackId() {
+    const [tab, section, id] = location.hash.replace("#", "").split("/");
+    return tab === "inbox" && section === "feedback" && id ? decodeURIComponent(id) : null;
 }
 let focusedId = null;
 
@@ -449,7 +457,7 @@ function focusLinkedReport(rows) {
 
 // Tapping another report email while the page is open changes only the hash.
 window.addEventListener("hashchange", () => {
-    if (!linkedReportId()) return;
+    if (!linkedReportId() && !linkedFeedbackId()) return;
     els.tab?.click();
     if (auth.currentUser) refresh();
 });
@@ -527,18 +535,111 @@ function renderRequests({ rows, sample }) {
     return sample ? 0 : open.length;
 }
 
+// ---------- Feedback (Contact Us in the app, Stacy 11/6) ----------
+
+const FEEDBACK_KIND = { bug: "Bug", idea: "Feature idea", feedback: "Feedback", account: "Account help" };
+
+async function loadFeedback() {
+    try {
+        const snap = await getDocs(query(collection(db, "feedback"), orderBy("createdAt", "desc"), limit(200)));
+        const rows = await Promise.all(snap.docs.map(async d => {
+            const x = d.data();
+            return { id: d.id, ...x, at: toMillis(x.createdAt), handledByName: await reviewerName(x.handledBy, null), handledAt: toMillis(x.handledAt) };
+        }));
+        return rows;
+    } catch (err) {
+        if (denied(err)) { setStatus("This account can't see feedback.", "error"); return []; }
+        throw err;
+    }
+}
+
+function feedbackCard(f) {
+    const card = el("div", "inbox-item");
+    card.dataset.feedbackId = f.id;
+    const top = el("div", "inbox-item-top");
+    top.append(el("span", "inbox-kind", FEEDBACK_KIND[f.category] || "Feedback"));
+    top.append(el("span", "inbox-when", dateTime(f.at)));
+    card.append(top);
+    card.append(el("div", "inbox-message", f.message || ""));
+    const dv = f.device || {};
+    card.append(el("div", "surge-meta",
+        `From ${f.name || "Unknown"} · Zzzap ${dv.appVersion || "?"} (${dv.build || "?"}), ${dv.channel || "?"} · ${dv.model || "?"} · iOS ${dv.iosVersion || "?"}`));
+    if (!f.replyTo) card.append(el("div", "surge-meta", "No reply address on their account."));
+
+    if (f.status === "done") {
+        card.append(el("div", "inbox-done-line",
+            `Done${f.handledByName ? ` by ${f.handledByName}` : ""}${f.handledAt ? `, ${dateTime(f.handledAt)}` : ""}`));
+        return card;
+    }
+    const actions = el("div", "inbox-actions");
+    if (f.replyTo) {
+        const reply = el("a", "btn-secondary", "Reply");
+        const firstLine = (f.message || "").split("\n")[0].slice(0, 50);
+        reply.href = `mailto:${f.replyTo}?subject=${encodeURIComponent(`Re: ${firstLine}`)}`;
+        reply.style.textDecoration = "none";
+        reply.style.textAlign = "center";
+        reply.style.borderRadius = "12px";
+        reply.style.padding = "10px 18px";
+        reply.style.fontWeight = "600";
+        actions.append(reply);
+    }
+    const done = el("button", "btn-secondary", "Mark Done");
+    done.type = "button";
+    done.addEventListener("click", () => markFeedbackDone(f, done));
+    actions.append(done);
+    card.append(actions);
+    return card;
+}
+
+async function markFeedbackDone(f, button) {
+    const unlock = lockButtons(button, "Saving…");
+    try {
+        await updateDoc(doc(db, "feedback", f.id), {
+            status: "done", handledBy: auth.currentUser.uid, handledAt: serverTimestamp(),
+        });
+        setStatus("Marked done.", "success");
+        await refresh();
+    } catch (err) {
+        unlock();
+        setStatus(denied(err) ? "This works once the feedback rule is deployed." : `Couldn't save: ${err.message}`, "error");
+    }
+}
+
+let focusedFeedbackId = null;
+
+function renderFeedback(rows) {
+    const open = rows.filter(f => f.status !== "done");
+    const done = rows.filter(f => f.status === "done").slice(0, 30);
+    els.feedbackOpen.replaceChildren(...(open.length ? open.map(feedbackCard) : [el("p", "surge-muted", "Nothing new.")]));
+    els.feedbackDone.replaceChildren(...(done.length ? done.map(feedbackCard) : [el("p", "surge-muted", "None yet.")]));
+    const id = linkedFeedbackId();
+    if (id && id !== focusedFeedbackId) {
+        focusedFeedbackId = id;
+        showSection("feedback");
+        const card = document.querySelector(`.inbox-item[data-feedback-id="${CSS.escape(id)}"]`);
+        if (card) {
+            card.classList.add("inbox-focus");
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+    return open.length;
+}
+
 // ---------- Load ----------
 
 async function refresh() {
-    const [reports, requests] = await Promise.all([
+    const [reports, requests, feedback] = await Promise.all([
         loadReports().catch(err => { setStatus(`Couldn't load reports: ${err.message}`, "error"); return null; }),
         loadRequests().catch(err => { setStatus(`Couldn't load data requests: ${err.message}`, "error"); return null; }),
+        loadFeedback().catch(err => { setStatus(`Couldn't load feedback: ${err.message}`, "error"); return null; }),
     ]);
     const waitingReports = reports ? renderReports(reports) : 0;
     const waitingRequests = requests ? renderRequests(requests) : 0;
+    const newFeedback = feedback ? renderFeedback(feedback) : 0;
     setSectionCount("reports", waitingReports);
     setSectionCount("requests", waitingRequests);
-    setTabDot(waitingReports + waitingRequests);
+    setSectionCount("feedback", newFeedback);
+    setTabDot(waitingReports + waitingRequests + newFeedback);
 }
 
 els.refresh.addEventListener("click", () => { setStatus(""); refresh(); });

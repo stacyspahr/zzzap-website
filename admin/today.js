@@ -93,6 +93,10 @@ async function loadNeeds() {
                 left > 0 ? `Next one due in ${span(left)}` : `Past due by ${span(-left)}`, "inbox", left < 7 * DAY));
         }
     } catch (_) { /* not allowed for this role */ }
+    try {
+        const snap = await getDocs(query(collection(db, "feedback"), where("status", "==", "new"), limit(100)));
+        if (snap.size) rows.push(row(`${snap.size} new feedback`, "From Contact Us in the app", "inbox"));
+    } catch (_) { /* not allowed for this role, or the rule isn't in yet */ }
     els.needs.replaceChildren(...(rows.length ? rows : [el("p", "surge-muted", "Nothing needs you right now.")]));
 }
 
