@@ -287,7 +287,7 @@ function reportCard(r, history = []) {
     for (const [label, action, style] of buttons) {
         const b = el("button", style, label);
         b.type = "button";
-        b.addEventListener("click", () => actOnReport(r, action, label));
+        b.addEventListener("click", () => actOnReport(r, action, label, b));
         actions.append(b);
     }
     card.append(actions);
@@ -353,17 +353,41 @@ function historyBlock(r, history) {
     return box;
 }
 
-async function actOnReport(r, action, label) {
+// The server call can take a few seconds (a cold function), so the tapped
+// button says it's working and the card's other buttons lock until it's done.
+// Without this a tap looked ignored and a second tap went to another button.
+const WORKING = {
+    dismiss: "Dismissing…", removeContent: "Removing…", warn: "Warning…",
+    suspend: "Suspending…", sent: "Saving…",
+};
+
+function lockButtons(button, text) {
+    const all = [...button.parentElement.querySelectorAll("button")];
+    const label = button.textContent;
+    all.forEach(b => { b.disabled = true; });
+    button.textContent = text;
+    button.classList.add("working");
+    setStatus(text, "");
+    return () => {
+        all.forEach(b => { b.disabled = false; });
+        button.classList.remove("working");
+        button.textContent = label;
+    };
+}
+
+async function actOnReport(r, action, label, button) {
     if (r.sample) { setStatus("That's a sample. Real reports show here once Zak's piece is in.", ""); return; }
     const what = r.type === "comment" ? "comment" : "zzzap";
     if (action === "suspend" && !confirm(`Suspend ${r.authorName || "this account"}? The ${what} is removed too, and they won't be able to send, vote or comment.`)) return;
     if (action === "removeContent" && !confirm(`${label}? It disappears for everyone.`)) return;
     if (action === "warn" && !confirm(`Warn ${r.authorName || "them"}? The ${what} is removed, and they get a note on Home saying why, with a link to the guidelines. It never says who reported it.`)) return;
+    const unlock = lockButtons(button, WORKING[action]);
     try {
         await httpsCallable(functions, "reviewReport")({ reportId: r.id, action });
         setStatus(`${ACTION_DONE[action]}.`, "success");
         await refresh();
     } catch (err) {
+        unlock();
         setStatus(serverNotReady(err)
             ? "This button works once Zak's server piece is in."
             : `Couldn't save: ${err.message}`, "error");
@@ -433,20 +457,22 @@ function requestCard(r) {
     const actions = el("div", "inbox-actions");
     const sent = el("button", "btn-primary", "Mark Sent");
     sent.type = "button";
-    sent.addEventListener("click", () => markSent(r));
+    sent.addEventListener("click", () => markSent(r, sent));
     actions.append(sent);
     card.append(actions);
     return card;
 }
 
-async function markSent(r) {
+async function markSent(r, button) {
     if (r.sample) { setStatus("That's a sample. Real requests show here once Zak's piece is in.", ""); return; }
     if (!confirm(`Mark ${r.name || "this request"} as sent? Only do this once the export email has gone out.`)) return;
+    const unlock = lockButtons(button, WORKING.sent);
     try {
         await httpsCallable(functions, "markDataExportSent")({ requestId: r.id });
         setStatus("Marked sent.", "success");
         await refresh();
     } catch (err) {
+        unlock();
         setStatus(serverNotReady(err)
             ? "This button works once Zak's server piece is in."
             : `Couldn't save: ${err.message}`, "error");

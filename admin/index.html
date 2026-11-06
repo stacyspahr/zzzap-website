@@ -102,6 +102,8 @@
             transition: opacity 0.15s, background 0.15s;
         }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
+        /* The tapped Inbox button stays readable while it says "Dismissing…". */
+        button.working:disabled { opacity: 1; cursor: progress; }
 
         .btn-primary { background: #f5c518; color: #000; }
         .btn-primary:hover:not(:disabled) { opacity: 0.85; }
@@ -2387,7 +2389,7 @@
     </script>
     <script type="module" src="notes.js?v=7"></script>
     <script type="module" src="surge.js?v=2"></script>
-    <script type="module" src="inbox.js?v=5"></script>
+    <script type="module" src="inbox.js?v=6"></script>
     <script type="module" src="stats.js?v=9"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>
