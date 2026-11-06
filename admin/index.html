@@ -434,6 +434,26 @@
         .inbox-history-when { color: #888; grid-row: span 2; }
         .inbox-history-what { color: #ccc; font-weight: 600; }
         .inbox-history-text { color: #888; }
+        /* The report a "Review This Report" email link points at. */
+        .inbox-item.inbox-focus { border: 1px solid #f5c518; border-radius: 14px; padding: 14px; margin: 8px -15px; }
+
+        /* Phones: the Inbox is reviewed from the report email on an iPhone
+           (Stacy, 11/6). Bigger text, full-width tap targets, tabs scroll. */
+        @media (max-width: 600px) {
+            .admin-container { padding: 16px 12px; }
+            .admin-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px; }
+            .admin-tabs { display: flex; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .admin-tab { flex-shrink: 0; padding: 8px 14px; }
+            .inbox-top { flex-wrap: wrap; }
+            .card.surge-panel-card { padding: 16px; }
+            .inbox-quote { font-size: 17px; line-height: 1.35; }
+            .surge-meta, .inbox-history-line, .inbox-done-line { font-size: 14px; }
+            .inbox-when { margin-left: 0; flex-basis: 100%; }
+            .inbox-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .inbox-actions button { min-height: 48px; font-size: 15px; }
+            .inbox-actions .btn-danger { border: 1px solid #ff453a; border-radius: 12px; }
+            .inbox-item.inbox-focus { margin: 8px -9px; padding: 12px 8px; }
+        }
 
         /* Stats tab (stats.js) */
         .stats-panel-card { max-width: 760px; }
@@ -2356,7 +2376,8 @@
                 localStorage.setItem("adminTab", name);
             }
             function startTab() {
-                const fromHash = location.hash.replace("#", "");
+                // "#inbox/<reportId>" (the report email's link) opens the Inbox.
+                const fromHash = location.hash.replace("#", "").split("/")[0];
                 return allowed.includes(fromHash) ? fromHash : (localStorage.getItem("adminTab") || "send");
             }
             tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.tab)));
@@ -2389,7 +2410,7 @@
     </script>
     <script type="module" src="notes.js?v=8"></script>
     <script type="module" src="surge.js?v=2"></script>
-    <script type="module" src="inbox.js?v=6"></script>
+    <script type="module" src="inbox.js?v=7"></script>
     <script type="module" src="stats.js?v=9"></script>
     <script type="module" src="marketing.js?v=4"></script>
 </body>

@@ -232,6 +232,7 @@ async function loadReports() {
 
 function reportCard(r, history = []) {
     const card = el("div", "inbox-item");
+    card.dataset.reportId = r.id;
     const top = el("div", "inbox-item-top");
     const kind = r.type === "comment" ? "Comment" : r.type === "system" ? "Automatic" : "Zzzap";
     top.append(el("span", "inbox-kind", `${kind} · ${r.reason === "auto_moderation" ? "Photo check" : r.reason || "No reason"}`));
@@ -409,8 +410,45 @@ function renderReports({ rows, sample }) {
     const historyOf = r => (byOffender.get(r.offenderId) || []).filter(h => h.id !== r.id);
     els.reportsOpen.replaceChildren(...(open.length ? open.map(r => reportCard(r, historyOf(r))) : [el("p", "surge-muted", "Nothing waiting.")]));
     els.reportsDone.replaceChildren(...(done.length ? done.map(r => reportCard(r)) : [el("p", "surge-muted", "None yet.")]));
+    if (!sample) focusLinkedReport(rows);
     return sample ? 0 : open.length;
 }
+
+// ---------- Opening one report from the email (#inbox/<reportId>) ----------
+
+/// The report id in "#inbox/<id>", or null.
+function linkedReportId() {
+    const [tab, id] = location.hash.replace("#", "").split("/");
+    return tab === "inbox" && id ? decodeURIComponent(id) : null;
+}
+let focusedId = null;
+
+/// Outlines the linked report and scrolls to it, once per link. If it was
+/// already handled (maybe from another phone), says by whom.
+function focusLinkedReport(rows) {
+    const id = linkedReportId();
+    if (!id || id === focusedId) return;
+    focusedId = id;
+    showSection("reports");
+    const card = document.querySelector(`.inbox-item[data-report-id="${CSS.escape(id)}"]`);
+    const r = rows.find(x => x.id === id);
+    if (!card || !r) {
+        setStatus("That report isn't in the list anymore.", "");
+        return;
+    }
+    card.classList.add("inbox-focus");
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (r.reviewed) {
+        setStatus(`Already handled: ${ACTION_DONE[r.reviewAction] || "Reviewed"}${r.reviewedByName ? ` by ${r.reviewedByName}` : ""}.`, "success");
+    }
+}
+
+// Tapping another report email while the page is open changes only the hash.
+window.addEventListener("hashchange", () => {
+    if (!linkedReportId()) return;
+    els.tab?.click();
+    if (auth.currentUser) refresh();
+});
 
 // ---------- Data Requests ----------
 
