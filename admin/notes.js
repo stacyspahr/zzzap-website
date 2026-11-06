@@ -291,8 +291,8 @@ function showCheck(data) {
     const line = el("p");
     line.append(el("strong", "", `${data.willGet} will get this.`));
     line.append(document.createTextNode(skipped
-        ? ` ${skipped} skipped because they already got a note or Official zzzap this week.`
-        : " Nobody skipped."));
+        ? ` ${skipped} skipped.`
+        : ""));
     const parts = [line];
     if (data.skipped.length) {
         const more = el("details");
@@ -318,7 +318,7 @@ async function showSampleCheck(audience) {
     if (audience.mode === "everyoneExcept") estimate = Math.max(0, total - audience.uids.length);
     els.check.className = "note-check";
     els.check.replaceChildren(
-        el("p", "", `Sample: about ${estimate} would get this. Who's skipped for the weekly limit shows once Zak's piece is in.`),
+        el("p", "", `Sample: about ${estimate} would get this. The real count shows once Zak's piece is in.`),
         el("p", "surge-muted", "Send stays off until then."),
     );
 }
@@ -336,7 +336,7 @@ async function save(action) {
     if (action === "send") {
         const who = `${checkedCount} ${checkedCount === 1 ? "person" : "people"}`;
         const ask = scheduling
-            ? `Schedule "${note.title}" for ${formatWhen(new Date(sendAt))}? About ${who} (the weekly limit is checked again when it sends).`
+            ? `Schedule "${note.title}" for ${formatWhen(new Date(sendAt))}? About ${who} (who gets it is checked again when it sends).`
             : `Send "${note.title}" to ${who} now? This can't be taken back.`;
         if (!confirm(ask)) return;
     }
