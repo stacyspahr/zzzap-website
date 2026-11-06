@@ -211,6 +211,8 @@ function reportCard(r, history = []) {
     const top = el("div", "inbox-item-top");
     const kind = r.type === "comment" ? "Comment" : r.type === "system" ? "Automatic" : "Zzzap";
     top.append(el("span", "inbox-kind", `${kind} · ${r.reason === "auto_moderation" ? "Photo check" : r.reason || "No reason"}`));
+    // Safety Test Mode (11/6): the buttons only mark it handled.
+    if (r.isTest) top.append(el("span", "inbox-test", "Test"));
     if (!r.reviewed && isRepeat(history)) top.append(el("span", "inbox-repeat", "Repeat"));
 
     const age = Date.now() - r.at;
@@ -240,6 +242,7 @@ function reportCard(r, history = []) {
     if (r.reporterName) who.push(`Reported by ${r.reporterName}`);
     if (who.length) card.append(el("div", "surge-meta", who.join(" · ")));
 
+    if (!r.reviewed && r.isTest) card.append(el("div", "surge-meta", "Test report: the buttons only mark it handled. Nothing happens to anyone."));
     if (!r.reviewed && r.aiSuggestion) card.append(suggestionBlock(r));
     if (!r.reviewed) card.append(historyBlock(r, history));
     if (!r.reviewed && r.reporterHistoryText) {
@@ -558,6 +561,7 @@ function feedbackCard(f) {
     card.dataset.feedbackId = f.id;
     const top = el("div", "inbox-item-top");
     top.append(el("span", "inbox-kind", FEEDBACK_KIND[f.category] || "Feedback"));
+    if (f.isTest) top.append(el("span", "inbox-test", "Test"));
     top.append(el("span", "inbox-when", dateTime(f.at)));
     card.append(top);
     card.append(el("div", "inbox-message", f.message || ""));
