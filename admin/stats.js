@@ -54,14 +54,15 @@ const SOCIAL = [
 ];
 const SOCIAL_STALE_DAYS = 7;
 
-// Boxes that aren't live yet. Numbers are made up; `needs` says what's missing.
-const SAMPLE_BOXES = [
-    { title: "New signups", value: "24", detail: "this week", needs: "Zak: a server count of new accounts" },
-    { title: "Total accounts", value: "1,310", detail: "all time", needs: "Zak: a server count of all accounts" },
-    { title: "Rating asks", value: "38", detail: "this week. Apple never says who rated.", needs: "App build to count each ask, plus a rule from Zak" },
-    { title: "Invites", value: "52 opened", detail: "17 joined", needs: "Zak: invite links are server only" },
-    { title: "Power purchases", value: "6", detail: "this month", needs: "Zak: a purchase count, or App Store Connect for now" },
-    { title: "Reports waiting", value: "2", detail: "oldest 5 hours", needs: "Zak: the reports rule (Moderator role)" },
+// Numbers we want but can't count yet. No made-up values (admin clean-out,
+// Stacy 11/6): just what each one needs. These move to Today's "Waiting on
+// Zak" list once that page exists.
+const NOT_BUILT = [
+    { title: "New signups", needs: "Zak: a server count of new accounts" },
+    { title: "Total accounts", needs: "Zak: a server count of all accounts" },
+    { title: "Rating asks", needs: "App build to count each ask, plus a rule from Zak" },
+    { title: "Invites opened and joined", needs: "Zak: invite links are server only" },
+    { title: "Power purchases", needs: "Zak: a purchase count, or App Store Connect for now" },
 ];
 
 // Goals (Stacy, 2026-11-02). Change them here; tell Claude.
@@ -843,7 +844,11 @@ function loadSocialQuietly() {
 // ---------- Render ----------
 
 function renderSample() {
-    els.sample.replaceChildren(...SAMPLE_BOXES.map(box));
+    els.sample.replaceChildren(...NOT_BUILT.map(n => {
+        const row = document.createElement("li");
+        row.textContent = `${n.title}: ${n.needs}`;
+        return row;
+    }));
 }
 
 async function load() {

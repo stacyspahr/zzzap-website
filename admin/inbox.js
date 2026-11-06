@@ -8,8 +8,7 @@
 //   reviewReport({ reportId, action })   action: dismiss | removeContent | warn | suspend;
 //                                        writes reviewed, reviewAction, reviewedAt, reviewedBy(Name)
 //   markDataExportSent({ requestId })    status → "fulfilled", fulfilledAt, fulfilledBy(Name)
-// Until the read rule is in, each section shows sample items marked Sample.
-// Until the functions are in, the buttons say so instead of failing quietly.
+// Accounts that can't read reports (not in admins) see a plain message.
 
 import { getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
@@ -36,8 +35,6 @@ const els = {
     reportsDone: document.getElementById("reports-done"),
     requestsOpen: document.getElementById("requests-open"),
     requestsDone: document.getElementById("requests-done"),
-    reportsSample: document.getElementById("reports-sample"),
-    requestsSample: document.getElementById("requests-sample"),
     sectionButtons: [...document.querySelectorAll(".admin-tab[data-inbox-section]")],
     sections: [...document.querySelectorAll(".inbox-section")],
 };
@@ -162,42 +159,6 @@ function setTabDot(waiting) {
     }
 }
 
-// ---------- Sample items (until admins can read the real ones) ----------
-
-function sampleReports() {
-    const now = Date.now();
-    return [
-        { id: "sample-1", sample: true, type: "comment", reason: "Rude or Mean", note: "",
-          commentText: "This is the dumbest question I've seen all week.", question: "Tacos or pizza tonight?",
-          offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
-          at: now - 30 * HOUR, reviewed: false },
-        { id: "sample-2", sample: true, type: "zzzap", reason: "Spam", note: "Same link sent to everyone",
-          question: "Win a free phone, tap here", isPhotoPoll: false, alsoBlocked: true,
-          offenderId: "sample-creator", authorName: "Sample Creator", reporterName: "Sample Reporter",
-          at: now - 3 * HOUR, reviewed: false },
-        { id: "sample-3", sample: true, type: "comment", reason: "Harassment", note: "",
-          commentText: "Nobody wants you here.", question: "Which color for the front door?",
-          offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
-          at: now - 4 * DAY, reviewed: true,
-          reviewAction: "removeContent", reviewedByName: "Stacy", reviewedAt: now - 3 * DAY },
-        { id: "sample-4", sample: true, type: "comment", reason: "Rude or Mean", note: "",
-          commentText: "Worst pick ever, you have no taste.", question: "Best pizza place downtown?",
-          offenderId: "sample-writer", authorName: "Sample Writer", reporterName: "Sample Reporter",
-          at: now - 12 * DAY, reviewed: true,
-          reviewAction: "warn", reviewedByName: "Stacy", reviewedAt: now - 12 * DAY, warningSeenAt: now - 11 * DAY },
-    ];
-}
-
-function sampleRequests() {
-    const now = Date.now();
-    return [
-        { id: "sample-r1", sample: true, name: "Sample Person", sentToMasked: "s•••@privaterelay.appleid.com",
-          at: now - 2 * DAY, status: "pending" },
-        { id: "sample-r2", sample: true, name: "Sample Person", sentToMasked: "j•••@gmail.com",
-          at: now - 40 * DAY, status: "fulfilled", fulfilledAt: now - 38 * DAY, fulfilledByName: "Stacy" },
-    ];
-}
-
 // ---------- Reports ----------
 
 async function loadReports() {
@@ -225,7 +186,7 @@ async function loadReports() {
         }));
         return { rows, sample: false };
     } catch (err) {
-        if (denied(err)) return { rows: sampleReports(), sample: true };
+        if (denied(err)) { setStatus("This account can't see reports.", "error"); return { rows: [], sample: false }; }
         throw err;
     }
 }
@@ -248,7 +209,6 @@ function reportCard(r, history = []) {
     const top = el("div", "inbox-item-top");
     const kind = r.type === "comment" ? "Comment" : r.type === "system" ? "Automatic" : "Zzzap";
     top.append(el("span", "inbox-kind", `${kind} · ${r.reason === "auto_moderation" ? "Photo check" : r.reason || "No reason"}`));
-    if (r.sample) top.append(el("span", "inbox-sample", "Sample"));
     if (!r.reviewed && isRepeat(history)) top.append(el("span", "inbox-repeat", "Repeat"));
 
     const age = Date.now() - r.at;
@@ -395,7 +355,6 @@ function lockButtons(button, text) {
 }
 
 async function actOnReport(r, action, label, button) {
-    if (r.sample) { setStatus("That's a sample. Real reports show here once Zak's piece is in.", ""); return; }
     const what = r.type === "comment" ? "comment" : "zzzap";
     if (action === "suspend" && !confirm(`Suspend ${r.authorName || "this account"}? The ${what} is removed too, and they won't be able to send, vote or comment.`)) return;
     if (action === "removeContent" && !confirm(`${label}? It disappears for everyone.`)) return;
@@ -414,7 +373,6 @@ async function actOnReport(r, action, label, button) {
 }
 
 function renderReports({ rows, sample }) {
-    els.reportsSample.hidden = !sample;
     const open = rows.filter(r => !r.reviewed).sort((a, b) => a.at - b.at); // oldest first
     const done = rows.filter(r => r.reviewed).sort((a, b) => (b.reviewedAt || b.at) - (a.reviewedAt || a.at)).slice(0, 30);
     // Every report about the same person, for each card's history line.
@@ -513,7 +471,7 @@ async function loadRequests() {
         }));
         return { rows, sample: false };
     } catch (err) {
-        if (denied(err)) return { rows: sampleRequests(), sample: true };
+        if (denied(err)) { setStatus("This account can't see data requests.", "error"); return { rows: [], sample: false }; }
         throw err;
     }
 }
@@ -522,7 +480,6 @@ function requestCard(r) {
     const card = el("div", "inbox-item");
     const top = el("div", "inbox-item-top");
     top.append(el("span", "inbox-kind", r.name || "Unknown account"));
-    if (r.sample) top.append(el("span", "inbox-sample", "Sample"));
     const open = r.status !== "fulfilled";
     if (open) {
         const left = r.at + DATA_REQUEST_DUE_MS - Date.now();
@@ -548,7 +505,6 @@ function requestCard(r) {
 }
 
 async function markSent(r, button) {
-    if (r.sample) { setStatus("That's a sample. Real requests show here once Zak's piece is in.", ""); return; }
     if (!confirm(`Mark ${r.name || "this request"} as sent? Only do this once the export email has gone out.`)) return;
     const unlock = lockButtons(button, WORKING.sent);
     try {
@@ -564,7 +520,6 @@ async function markSent(r, button) {
 }
 
 function renderRequests({ rows, sample }) {
-    els.requestsSample.hidden = !sample;
     const open = rows.filter(r => r.status !== "fulfilled").sort((a, b) => a.at - b.at);
     const done = rows.filter(r => r.status === "fulfilled").slice(0, 30);
     els.requestsOpen.replaceChildren(...(open.length ? open.map(requestCard) : [el("p", "surge-muted", "Nothing waiting.")]));
@@ -591,6 +546,6 @@ els.refresh.addEventListener("click", () => { setStatus(""); refresh(); });
 onAuthStateChanged(auth, user => {
     if (!user) return;
     // A limited role (Marketing) doesn't see the Inbox tab; its reads are
-    // refused by the rules and it just falls back to samples nobody sees.
+    // refused by the rules and the page says so.
     refresh();
 });
