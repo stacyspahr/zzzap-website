@@ -119,6 +119,17 @@ async function nameFor(uid) {
     return (await accountFor(uid))?.name || null;
 }
 
+// Admin-site accounts have no users doc and no name on the account, so the
+// server stamps their email as the reviewer. Show a first name instead.
+const ADMIN_NAMES = {
+    "N0VsgL5S59edhJsKi3lxuXV6bzj1": "Stacy",
+    "QhHvgTWnm3aweG6OckJ97ZZLthB2": "Zak",
+};
+
+async function reviewerName(uid, stamped) {
+    return ADMIN_NAMES[uid] || stamped || await nameFor(uid);
+}
+
 // ---------- Sections: Reports · Data Requests ----------
 
 function showSection(name) {
@@ -208,7 +219,7 @@ async function loadReports() {
                 offenderBanned: offender?.banned === true,
                 authorName: offender?.name || null,
                 reporterName: await nameFor(x.reporterId),
-                reviewedByName: x.reviewedByName || await nameFor(x.reviewedBy),
+                reviewedByName: await reviewerName(x.reviewedBy, x.reviewedByName),
                 reviewedAt: toMillis(x.reviewedAt),
             };
         }));
@@ -389,7 +400,7 @@ async function loadRequests() {
                 at: toMillis(x.requestedAt),
                 name: await nameFor(x.uid),
                 fulfilledAt: toMillis(x.fulfilledAt),
-                fulfilledByName: x.fulfilledByName || await nameFor(x.fulfilledBy),
+                fulfilledByName: await reviewerName(x.fulfilledBy, x.fulfilledByName),
             };
         }));
         return { rows, sample: false };
