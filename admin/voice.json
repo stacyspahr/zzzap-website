@@ -219,6 +219,15 @@
       ]
     },
     {
+      "say": "Share",
+      "means": "Anyone can share someone else's Surge zzzap: its public link and the creator's card, to Instagram, TikTok and anywhere else. It never goes to the sharer's own followers in the app. Votes from it count as Shared, never who shared.",
+      "avoid": [
+        "repost",
+        "forward",
+        "send to your followers"
+      ]
+    },
+    {
       "say": "Home, Zzzaps, New, People, Me",
       "means": "The five tabs. New is the bolt in the middle.",
       "avoid": [
