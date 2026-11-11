@@ -14,6 +14,7 @@ import {
     getFirestore, collection, query, where, limit, getDocs, doc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
+import { DECKS_BY_HANDLE, deckButtons } from "./decks.js?v=1";
 
 const app = getApp();
 const auth = getAuth(app);
@@ -131,6 +132,8 @@ function memberRow(u) {
     row.append(info);
 
     const actions = el("div", "surge-actions");
+    const deck = u.handle && DECKS_BY_HANDLE[u.handle];
+    if (deck) actions.append(...deckButtons(u.displayName || `@${u.handle}`, deck));
     const select = categorySelect(u.categoryId);
     const save = el("button", "btn-secondary", "Change");
     save.type = "button";

@@ -6,6 +6,7 @@
 // To add a file: drop it in assets/brand/ and add a line to BRAND_GROUPS.
 
 import { loadVoice, renderVoice } from "./voice-view.js";
+import { DECKS_BY_PAGE, deckButtons } from "./decks.js?v=1";
 
 const BRAND = "../assets/brand/";
 
@@ -133,7 +134,17 @@ function pitchPages() {
         link.target = "_blank";
         link.rel = "noopener";
         link.append(el("div", "surge-name", page.name), el("div", "surge-meta", page.note));
-        list.append(link);
+        // A prospect with a personal deck gets Open Deck + Share under their page.
+        const deck = DECKS_BY_PAGE[page.url];
+        if (deck) {
+            const box = el("div", "mkt-pitch");
+            const actions = el("div", "surge-actions mkt-deck-actions");
+            actions.append(...deckButtons(page.name, deck));
+            box.append(link, actions);
+            list.append(box);
+        } else {
+            list.append(link);
+        }
     }
     return section("pitch", "Surge pitch pages", `${PITCH_PAGES.length} pages`, [list]);
 }
