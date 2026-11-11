@@ -6,19 +6,13 @@
 // To add a file: drop it in assets/brand/ and add a line to BRAND_GROUPS.
 
 import { loadVoice, renderVoice } from "./voice-view.js";
-import { DECKS_BY_PAGE, deckButtons } from "./decks.js?v=1";
 
 const BRAND = "../assets/brand/";
 
-// Hand-built Surge pitch pages on vote.zzzap-app.com (zzzap-vote repo).
+// Hand-built Surge pitch pages on vote.zzzap-app.com (zzzap-vote repo). Each
+// prospect, with their deck, is on the Surge tab (decks.js, Stacy 11/11).
 const PITCH_PAGES = [
-    { name: "All Surge demos", note: "The list page with every demo", url: "https://vote.zzzap-app.com/demo/" },
-    { name: "Colette Bottiaux", note: "Fitness · Vive Fitness PDX", url: "https://vote.zzzap-app.com/demofitness/" },
-    { name: "Meurig Morgan", note: "Golf · Dragon Golf, Oregon City", url: "https://vote.zzzap-app.com/demogolf/" },
-    { name: "Jason Prouty", note: "Artist · Garage31", url: "https://vote.zzzap-app.com/demoartist/" },
-    { name: "Michael Trupia", note: "Insurance · COUNTRY Financial", url: "https://vote.zzzap-app.com/demoinsurance/" },
-    { name: "503 Distilling", note: "Distillery · SE Portland", url: "https://vote.zzzap-app.com/demo503/" },
-    { name: "Throne Barbershop", note: "Barbershop · 3 Portland shops", url: "https://vote.zzzap-app.com/demobarber/" },
+    { name: "All Surge demos", note: "Every demo page. Prospects and their decks are on the Surge tab.", url: "https://vote.zzzap-app.com/demo/" },
 ];
 
 // `light` puts a light background behind files that are black on clear.
@@ -134,19 +128,9 @@ function pitchPages() {
         link.target = "_blank";
         link.rel = "noopener";
         link.append(el("div", "surge-name", page.name), el("div", "surge-meta", page.note));
-        // A prospect with a personal deck gets Open Deck + Share under their page.
-        const deck = DECKS_BY_PAGE[page.url];
-        if (deck) {
-            const box = el("div", "mkt-pitch");
-            const actions = el("div", "surge-actions mkt-deck-actions");
-            actions.append(...deckButtons(page.name, deck));
-            box.append(link, actions);
-            list.append(box);
-        } else {
-            list.append(link);
-        }
+        list.append(link);
     }
-    return section("pitch", "Surge pitch pages", `${PITCH_PAGES.length} pages`, [list]);
+    return section("pitch", "Surge pitch pages", "Demo pages", [list]);
 }
 
 function fileGrid(files) {

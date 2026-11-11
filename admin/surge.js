@@ -14,7 +14,7 @@ import {
     getFirestore, collection, query, where, limit, getDocs, doc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-import { DECKS_BY_HANDLE, deckButtons } from "./decks.js?v=1";
+import { DECKS_BY_HANDLE, PROSPECTS, ALL_DEMOS, deckButtons } from "./decks.js?v=2";
 
 const app = getApp();
 const auth = getAuth(app);
@@ -149,6 +149,40 @@ function memberRow(u) {
     row.append(actions);
     return row;
 }
+
+// ---------- Prospects ----------
+// Hand-picked people we're pitching (decks.js). The name opens their demo page;
+// Open Deck + Share once their personal deck exists.
+
+function prospectRow(p) {
+    const row = el("div", "surge-row");
+    const info = el("div", "surge-info");
+    const link = el("a", "surge-name surge-name-link", p.name);
+    link.href = p.page;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.title = "Open their demo page in a new tab";
+    info.append(link, el("div", "surge-meta", p.note));
+    row.append(info);
+
+    const actions = el("div", "surge-actions");
+    if (p.deck) actions.append(...deckButtons(p.name, p.deck));
+    else actions.append(el("span", "surge-muted", "No deck yet"));
+    row.append(actions);
+    return row;
+}
+
+function renderProspects() {
+    const link = el("a", "surge-name-link", "See all demo pages");
+    link.href = ALL_DEMOS;
+    link.target = "_blank";
+    link.rel = "noopener";
+    const all = el("p", "surge-muted");
+    all.style.marginTop = "10px";
+    all.append(link);
+    document.getElementById("surge-prospects").replaceChildren(...PROSPECTS.map(prospectRow), all);
+}
+renderProspects();
 
 // ---------- Invite ----------
 
