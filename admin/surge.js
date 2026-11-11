@@ -14,7 +14,7 @@ import {
     getFirestore, collection, query, where, limit, getDocs, doc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-import { DECKS_BY_HANDLE, PROSPECTS, ALL_DEMOS, deckButtons } from "./decks.js?v=2";
+import { DECKS_BY_HANDLE, PROSPECTS, ALL_DEMOS, deckButtons } from "./decks.js?v=3";
 
 const app = getApp();
 const auth = getAuth(app);

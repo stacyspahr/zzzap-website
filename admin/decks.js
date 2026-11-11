@@ -3,14 +3,17 @@
 // (noindex, unlisted). The links show up as Open Deck + Share on the Surge tab
 // (by @handle for accounts on Surge, and under Prospects).
 //
-// To add one: build the deck, then add its link here and bump ?v= on this
+// Each deck is { url, notes }. Open Deck opens Stacy's copy (url + #notes-<notes>,
+// which shows his "You say" lines); Share sends the plain url, with no notes.
+//
+// To add one: build the deck, then add it here and bump ?v= on this
 // file's import in surge.js, and surge.js's ?v= in index.html.
 
 const VOTE = "https://vote.zzzap-app.com";
 
 // Surge accounts, by @handle.
 export const DECKS_BY_HANDLE = {
-    stacyfromzzzap: `${VOTE}/invite/stacyfromzzzap-ajrv/`,
+    stacyfromzzzap: { url: `${VOTE}/invite/stacyfromzzzap-ajrv/`, notes: "5intfp67" },
 };
 
 // Prospects (Surge tab → Prospects): each one's hand-built demo page on
@@ -33,11 +36,14 @@ function button(className, text) {
     return b;
 }
 
-/// Open Deck + Share for one deck. Share opens the share sheet (Messages,
-/// Mail, AirDrop) where the browser has one, otherwise copies the link.
-export function deckButtons(name, url) {
+/// Open Deck (Stacy's copy, with his notes) + Share (the prospect's link,
+/// no notes). Share opens the share sheet (Messages, Mail, AirDrop) where the
+/// browser has one, otherwise copies the link.
+export function deckButtons(name, deck) {
+    const url = deck.url;
     const open = button("btn-secondary", "Open Deck");
-    open.addEventListener("click", () => window.open(url, "_blank", "noopener"));
+    open.title = "Your copy, with what to say";
+    open.addEventListener("click", () => window.open(deck.notes ? `${url}#notes-${deck.notes}` : url, "_blank", "noopener"));
 
     const share = button("btn-secondary", "Share");
     share.addEventListener("click", async () => {
