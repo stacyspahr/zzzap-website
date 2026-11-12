@@ -136,9 +136,10 @@
       ]
     },
     {
-      "say": "private zzzap",
-      "means": "Results stay hidden until it closes, then each voter gets one look. Free for everyone.",
+      "say": "secret zzzap",
+      "means": "Results stay hidden until it closes, then each voter gets one look. Free for everyone. Renamed from Private 11/12: people read Private as \"just our group,\" which every zzzap already is.",
       "avoid": [
+        "private zzzap",
         "secret poll"
       ]
     },
