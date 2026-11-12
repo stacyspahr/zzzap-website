@@ -361,10 +361,6 @@ const templates = [
       question: "Have you used Smart Circles yet? All Followers, Mutuals, and a few others.",
       options: ["Yes, use them", "Not yet. Setting one up now.", "Show me how"],
       timeLimit: 1440, openBallot: true },
-    { category: "Awareness", name: "Secret zzzaps?", featureTag: "private",
-      question: "Have you sent a secret zzzap? Results vanish 30 seconds after viewing.",
-      options: ["Yes, sent one", "Not yet. Sending one now.", "What does private mean?"],
-      timeLimit: 1440, openBallot: true },
     { category: "Awareness", name: "Scheduling?", featureTag: "scheduling",
       question: "Have you scheduled a zzzap to send later?",
       options: ["Yes, used it", "Not yet. Trying it now.", "Show me where"],
@@ -429,7 +425,7 @@ const templates = [
     // PRIORITIZATION — editorial framing.
     { category: "Prioritization", name: "Most-wanted Power capability",
       question: "Which Power capability would you pay to unlock unlimited?",
-      options: ["Unlimited photo zzzaps", "Unlimited secret zzzaps", "Unlimited open ballots", "Bigger recipient circles"],
+      options: ["Unlimited photo zzzaps", "Unlimited open ballots", "Bigger recipient circles"],
       timeLimit: 2880, openBallot: true },
     { category: "Prioritization", name: "Invite cap?",
       question: "Is 15 recipients per zzzap enough for your decisions?",
@@ -483,12 +479,6 @@ const teachTemplates = {
         name: "Teach: Smart Circles",
         question: "Smart Circles are pre-built recipient lists. All Followers, Mutuals, Usuals. Pick one when sending instead of selecting people one by one. Try one?",
         options: ["Setting one up now.", "Got it. Will try later.", "Still not clear."],
-        timeLimit: 240, openBallot: true
-    },
-    private: {
-        name: "Teach: Secret zzzaps",
-        question: "Secret zzzaps auto-destroy 30 seconds after viewing. Perfect for personal stuff. Try one now?",
-        options: ["Sending one now.", "Got it. Will try later.", "Still not clear."],
         timeLimit: 240, openBallot: true
     },
     scheduling: {

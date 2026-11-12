@@ -137,7 +137,7 @@
     },
     {
       "say": "secret zzzap",
-      "means": "Results stay hidden until it closes, then each voter gets one look. Free for everyone. Renamed from Private 11/12: people read Private as \"just our group,\" which every zzzap already is.",
+      "means": "Results stay hidden until it closes, then each voter gets one look. Free for everyone. Renamed from Private 11/12: people read Private as \"just our group,\" which every zzzap already is. Hidden from the app 11/12 (Poll.canSendSecret = false): don't mention it in posts or notes until it's back.",
       "avoid": [
         "private zzzap",
         "secret poll"
