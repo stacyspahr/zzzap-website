@@ -625,9 +625,9 @@ async function loadFeedback() {
 }
 
 function feedbackCard(f) {
-    const done = f.status === "done";
-    const fresh = done ? handledNew("feedback", f.handledAt, f.handledBy) : isNew("feedback", f.at);
-    const card = el("div", `inbox-item ${done ? "handled" : "waiting"}${fresh ? " is-new" : ""}`);
+    const isDone = f.status === "done";
+    const fresh = isDone ? handledNew("feedback", f.handledAt, f.handledBy) : isNew("feedback", f.at);
+    const card = el("div", `inbox-item ${isDone ? "handled" : "waiting"}${fresh ? " is-new" : ""}`);
     card.dataset.feedbackId = f.id;
     const top = el("div", "inbox-item-top");
     top.append(el("span", "inbox-kind", FEEDBACK_KIND[f.category] || "Feedback"));
@@ -641,7 +641,7 @@ function feedbackCard(f) {
         `From ${f.name || "Unknown"} · Zzzap ${dv.appVersion || "?"} (${dv.build || "?"}), ${dv.channel || "?"} · ${dv.model || "?"} · iOS ${dv.iosVersion || "?"}`));
     if (!f.replyTo) card.append(el("div", "surge-meta", "No reply address on their account."));
 
-    if (f.status === "done") {
+    if (isDone) {
         card.append(el("div", "inbox-done-line",
             `Done${f.handledByName ? ` by ${f.handledByName}` : ""}${f.handledAt ? `, ${dateTime(f.handledAt)}` : ""}`));
         return card;
