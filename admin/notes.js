@@ -502,6 +502,14 @@ function audienceSummary(aud) {
     return "Everyone";
 }
 
+/// How many still have it on Home, or null when the server doesn't keep
+/// the clear counts yet (tapped, closed, cleared on its own).
+function stillShowing(n) {
+    const c = n.counts || {};
+    if (c.tapped === undefined || c.dismissed === undefined || c.expired === undefined) return null;
+    return Math.max(0, (c.delivered || 0) - c.tapped - c.dismissed - c.expired);
+}
+
 async function noteRow(id, n, style = "") {
     const row = el("div", `surge-row ${style}`.trim());
     const info = el("div", "surge-info");
@@ -516,7 +524,8 @@ async function noteRow(id, n, style = "") {
             c.skipped ? `${c.skipped} skipped` : null,
             c.tapped !== undefined ? `${c.tapped} tapped` : null,
             c.dismissed !== undefined ? `${c.dismissed} closed it` : null,
-            c.expired !== undefined ? `${c.expired} cleared on their own` : null].filter(Boolean).join(" · ");
+            c.expired !== undefined ? `${c.expired} cleared on their own` : null,
+            stillShowing(n) !== null ? `${stillShowing(n)} still on Home` : null].filter(Boolean).join(" · ");
     } else if (n.status === "scheduled") {
         const when = n.sendAt?.toDate ? formatWhen(n.sendAt.toDate()) : "";
         meta = `Scheduled for ${when} · ${audienceSummary(n.audience)} · by ${by}`;
@@ -545,10 +554,13 @@ function startNotesListener() {
     unsubNotes = onSnapshot(q, async (snap) => {
         const docs = snap.docs.map(d => [d.id, d.data()]);
         const open = docs.filter(([, n]) => n.status === "draft" || n.status === "scheduled");
-        // A note clears from Home after 7 days at the most, so a newer sent
-        // one may still be showing. Older ones and cancelled ones fold away.
+        // Sent in the last 7 days (a note clears from Home by then at the
+        // latest), unless the counts say everyone already cleared it. Until
+        // the server keeps those counts we can't tell, so the heading says
+        // "Sent this week", not "on Home" (Stacy, 11/14).
         const sentAt = n => n.sentAt?.toMillis ? n.sentAt.toMillis() : 0;
-        const live = docs.filter(([, n]) => n.status === "sent" && Date.now() - sentAt(n) < LIVE_MS);
+        const live = docs.filter(([, n]) => n.status === "sent" && Date.now() - sentAt(n) < LIVE_MS
+            && (stillShowing(n) ?? 1) > 0);
         const earlier = docs.filter(([id, n]) => (n.status === "sent" || n.status === "cancelled") && !live.some(([liveId]) => liveId === id));
         els.drafts.replaceChildren(...(open.length
             ? await Promise.all(open.map(([id, n]) => noteRow(id, n, "raised")))

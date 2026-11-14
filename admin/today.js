@@ -21,6 +21,7 @@ const WAITING_ON_ZAK = [
     { what: "Surge: add people and categories", where: "Surge tab buttons" },
     { what: "Roles: refusing admin sign-in without one, and moving Haley to a role", where: "Who can use this site" },
     { what: "See results without voting on the web page", where: "vote.zzzap-app.com" },
+    { what: "Note clear counts: how many closed, tapped, or let a note run out (the optional trigger in OFFICIAL-NOTES-SPEC). Then Reach People can say which notes are still on Home", where: "Reach People" },
     { what: "Counts: new signups, total accounts, invites, Power purchases, rating asks (one server count, getAdminStats)", where: "Numbers" },
 ];
 
