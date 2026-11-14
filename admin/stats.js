@@ -163,9 +163,10 @@ const INFO = {
         ["Why it isn't live", "Zak would need to keep a count on the server for it to show here."],
     ],
     "Reports waiting": [
-        ["What it will show", "How many reported zzzaps and comments haven't been reviewed yet, and how long the oldest one has waited."],
-        ["What already works", "Admins get a push for every new report, and a daily digest flags anything waiting more than 24 hours."],
-        ["Why it isn't live", "This page can't read reports yet. Zak needs to add the reports rule and the Moderator role."],
+        ["What it is", "How many reports people made that nobody has handled yet, and how long the oldest one has waited."],
+        ["Where the numbers come from", "Reports still marked not reviewed. Handling one in the Inbox takes it off."],
+        ["Left out", "Reports the server handled on its own, and Safety Test Mode reports once they're cleared."],
+        ["Good to know", "The goal is every report handled within 24 hours. Each new report also sends an email, and a daily email flags anything waiting longer."],
     ],
 };
 
@@ -402,6 +403,28 @@ function buildLiveBoxes(allPolls, appPeople) {
         { title: "Strike vs Storm", value: `${sent.length - storms} / ${storms}`, detail: `Last 30 days. ${photos} with photos` },
         { title: "People per zzzap", value: avgAsked, detail: `Average sent to, last 30 days. ${cancelled} cancelled` },
     ];
+}
+
+// Reports nobody has handled yet, same count as Today. People's reports
+// only: the server's own are handled already. Nil if this role can't read
+// reports.
+async function reportsWaitingBox() {
+    try {
+        const snap = await getDocs(query(collection(db, "reports"), where("reviewed", "==", false), limit(100)));
+        const waiting = snap.docs.map(d => d.data()).filter(r => r.reporterId !== "system");
+        if (!waiting.length) return { title: "Reports waiting", value: "0", detail: "Nothing waiting" };
+        const oldest = Math.min(...waiting.map(r => toDate(r.timestamp)?.getTime() ?? Date.now()));
+        const hours = Math.floor((Date.now() - oldest) / (60 * 60 * 1000));
+        const age = hours < 1 ? "under an hour" : hours < 48 ? `${hours} hour${hours === 1 ? "" : "s"}` : `${Math.floor(hours / 24)} days`;
+        return {
+            title: "Reports waiting",
+            value: waiting.length >= 100 ? "100+" : String(waiting.length),
+            detail: `Oldest waiting ${age}${hours >= 24 ? ", past the 24 hour goal" : ""}`,
+        };
+    } catch (err) {
+        console.warn("[STATS] reports", err.message);
+        return null;
+    }
 }
 
 // ---------- 12-week trend ----------
@@ -844,6 +867,8 @@ async function load() {
         const polls = await loadZzzaps();
         const appPeople = appPeopleIn(polls);
         els.live.replaceChildren(...buildLiveBoxes(polls, appPeople).map(box));
+        const reports = await reportsWaitingBox();
+        if (reports) els.live.append(box(reports));
         els.trend.replaceChildren(buildTrend(polls, appPeople));
         refreshDevices();
         loadSocialQuietly();

@@ -18,11 +18,10 @@ const DAY = 24 * HOUR;
 // What's built on our side and waiting on Zak's server half. Claude keeps
 // this current: when Zak finishes one, it comes off and its switch goes on.
 const WAITING_ON_ZAK = [
-    { what: "Notes: send, schedule, warnings and report updates", where: "Reach People → Notes, and Warn in the Inbox" },
     { what: "Surge: add people and categories", where: "Surge tab buttons" },
-    { what: "Roles: one list with a role per person, and refusing admin sign-in without one", where: "Who can use this site" },
+    { what: "Roles: refusing admin sign-in without one, and moving Haley to a role", where: "Who can use this site" },
     { what: "See results without voting on the web page", where: "vote.zzzap-app.com" },
-    { what: "Counts: new signups, total accounts, invites, Power purchases, rating asks", where: "Numbers" },
+    { what: "Counts: new signups, total accounts, invites, Power purchases, rating asks (one server count, getAdminStats)", where: "Numbers" },
 ];
 
 const ACTION_DONE = {

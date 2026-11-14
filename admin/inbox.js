@@ -168,9 +168,11 @@ async function loadReports() {
         const snap = await getDocs(query(collection(db, "reports"), orderBy("timestamp", "desc"), limit(200)));
         const rows = await Promise.all(snap.docs.map(async d => {
             const x = d.data();
-            const type = x.type === "comment" ? "comment" : (x.reporterId === "system" ? "system" : "zzzap");
-            // The person the report is about: a comment's writer, else the zzzap's creator.
-            const offenderId = (type === "comment" ? x.commentAuthorId : x.pollCreatorId) || null;
+            const type = ["comment", "stormAnswer"].includes(x.type) ? x.type : (x.reporterId === "system" ? "system" : "zzzap");
+            // The person the report is about: a comment's or Storm answer's
+            // writer, else the zzzap's creator.
+            const offenderId = (type === "comment" ? x.commentAuthorId
+                : type === "stormAnswer" ? x.answerAuthorId : x.pollCreatorId) || null;
             const offender = await accountFor(offenderId);
             return {
                 id: d.id, ...x, type,
@@ -193,6 +195,9 @@ async function loadReports() {
     }
 }
 
+// The card's label for each kind of report.
+const KIND = { comment: "Comment", stormAnswer: "Storm Answer", system: "Automatic", zzzap: "Zzzap" };
+
 // Claude's suggestion (functions/reportAdvice.js): help thinking, never deciding.
 const SUGGESTED = { dismiss: "Dismiss", removeContent: "Remove", warn: "Warn", suspend: "Suspend" };
 function suggestionBlock(r) {
@@ -209,7 +214,7 @@ function reportCard(r, history = []) {
     const card = el("div", "inbox-item");
     card.dataset.reportId = r.id;
     const top = el("div", "inbox-item-top");
-    const kind = r.type === "comment" ? "Comment" : r.type === "system" ? "Automatic" : "Zzzap";
+    const kind = KIND[r.type] || "Zzzap";
     top.append(el("span", "inbox-kind", `${kind} · ${r.reason === "auto_moderation" ? "Photo check" : r.reason || "No reason"}`));
     // Safety Test Mode (11/6): the buttons only mark it handled.
     if (r.isTest) top.append(el("span", "inbox-test", "Test"));
@@ -228,6 +233,16 @@ function reportCard(r, history = []) {
     if (r.type === "comment") {
         card.append(el("div", "inbox-quote", `“${r.commentText || ""}”`));
         card.append(el("div", "surge-meta", `On “${r.question || "a zzzap"}”`));
+    } else if (r.type === "stormAnswer") {
+        card.append(el("div", "inbox-quote", `“${r.answerText || ""}”`));
+        card.append(el("div", "surge-meta", `Answer on “${r.question || "a Storm"}”`));
+        if (r.answerPhotoURL) {
+            const link = el("a", "inbox-link", "See Photo");
+            link.href = r.answerPhotoURL;
+            link.target = "_blank";
+            link.rel = "noopener";
+            card.append(link);
+        }
     } else if (r.type === "zzzap") {
         card.append(el("div", "inbox-quote", r.question || "No question saved"));
         const extra = [r.isPhotoPoll ? "Photo zzzap" : null, r.alsoBlocked ? "They also blocked the creator" : null].filter(Boolean);
@@ -238,7 +253,7 @@ function reportCard(r, history = []) {
     if (r.note && r.type !== "system") card.append(el("div", "surge-meta", `Their note: ${r.note}`));
 
     const who = [];
-    if (r.authorName) who.push(`${r.type === "comment" ? "Written by" : "Zzzap by"} ${r.authorName}`);
+    if (r.authorName) who.push(`${r.type === "zzzap" ? "Zzzap by" : "Written by"} ${r.authorName}`);
     if (r.reporterName) who.push(`Reported by ${r.reporterName}`);
     if (who.length) card.append(el("div", "surge-meta", who.join(" · ")));
 
@@ -261,7 +276,7 @@ function reportCard(r, history = []) {
     }
 
     const actions = el("div", "inbox-actions");
-    const removeLabel = r.type === "comment" ? "Remove Comment" : "Remove Zzzap";
+    const removeLabel = r.type === "comment" ? "Remove Comment" : r.type === "stormAnswer" ? "Remove Answer" : "Remove Zzzap";
     const buttons = [
         ["Dismiss", "dismiss", "btn-secondary"],
         [removeLabel, "removeContent", "btn-secondary"],
@@ -319,9 +334,10 @@ function historyBlock(r, history) {
     list.hidden = true;
     for (const h of [...history].sort((a, b) => b.at - a.at)) {
         const what = h.type === "comment" ? `“${h.commentText || ""}”`
+            : h.type === "stormAnswer" ? `“${h.answerText || ""}”`
             : h.type === "zzzap" ? (h.question || "A zzzap")
             : (h.note || "Photo check");
-        const kind = h.type === "comment" ? "Comment" : h.type === "zzzap" ? "Zzzap" : "Photo check";
+        const kind = h.type === "system" ? "Photo check" : KIND[h.type] || "Zzzap";
         const reason = h.type === "system" ? "" : ` · ${h.reason || "No reason"}`;
         const row = el("div", "inbox-history-row");
         row.append(el("span", "inbox-history-when", shortDate(h.at)));
@@ -360,10 +376,14 @@ function lockButtons(button, text) {
 }
 
 async function actOnReport(r, action, label, button) {
-    const what = r.type === "comment" ? "comment" : "zzzap";
+    const what = r.type === "comment" ? "comment" : r.type === "stormAnswer" ? "answer" : "zzzap";
     if (action === "suspend" && !confirm(`Suspend ${r.authorName || "this account"}? The ${what} is removed too, and they won't be able to send, vote or comment.`)) return;
     if (action === "removeContent" && !confirm(`${label}? It disappears for everyone.`)) return;
-    if (action === "warn" && !confirm(`Warn ${r.authorName || "them"}? The ${what} is removed, and they get a note on Home saying why, with a link to the guidelines. It never says who reported it.`)) return;
+    // The server has no warning words for Storm answers yet, so Warn only removes it.
+    const warnNote = r.type === "stormAnswer"
+        ? "The answer is removed. Storm answers don't send a warning note yet."
+        : `The ${what} is removed, and they get a note on Home saying why, with a link to the guidelines. It never says who reported it.`;
+    if (action === "warn" && !confirm(`Warn ${r.authorName || "them"}? ${warnNote}`)) return;
     const unlock = lockButtons(button, WORKING[action]);
     try {
         await httpsCallable(functions, "reviewReport")({ reportId: r.id, action });
