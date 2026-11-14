@@ -37,6 +37,7 @@ const els = {
     requestsDone: document.getElementById("requests-done"),
     feedbackOpen: document.getElementById("feedback-open"),
     feedbackDone: document.getElementById("feedback-done"),
+    panel: document.querySelector('.admin-panel[data-panel="inbox"]'),
     sectionButtons: [...document.querySelectorAll(".admin-tab[data-inbox-section]")],
     sections: [...document.querySelectorAll(".inbox-section")],
 };
@@ -131,7 +132,35 @@ async function reviewerName(uid, stamped) {
 
 // ---------- Sections: Reports · Data Requests ----------
 
+// "New" (Stacy 11/14): what came in, or what someone else handled, since you
+// last opened that section on this browser. Read once per visit so the labels
+// stay put while you work; the first visit ever marks nothing.
+const SECTIONS = ["reports", "requests", "feedback"];
+const seenBefore = Object.fromEntries(SECTIONS.map(n => [n, Number(localStorage.getItem(`inboxSeen.${n}`)) || 0]));
+const markedThisVisit = new Set();
+let currentSection = "reports";
+
+function markSeen() {
+    if (!els.panel || els.panel.hidden || markedThisVisit.has(currentSection)) return;
+    markedThisVisit.add(currentSection);
+    localStorage.setItem(`inboxSeen.${currentSection}`, String(Date.now()));
+}
+
+function isNew(section, at) {
+    return seenBefore[section] > 0 && at > seenBefore[section];
+}
+
+/// Handled by someone else since the last visit, so it's news to you.
+function handledNew(section, at, by) {
+    return isNew(section, at) && by !== auth.currentUser?.uid;
+}
+
+function newPill() {
+    return el("span", "inbox-new", "New");
+}
+
 function showSection(name) {
+    currentSection = name;
     els.sectionButtons.forEach(b => {
         const on = b.dataset.inboxSection === name;
         b.classList.toggle("active", on);
@@ -139,8 +168,10 @@ function showSection(name) {
     });
     els.sections.forEach(s => { s.hidden = s.dataset.inboxSection !== name; });
     localStorage.setItem("inboxSection", name);
+    markSeen();
 }
 els.sectionButtons.forEach(b => b.addEventListener("click", () => showSection(b.dataset.inboxSection)));
+els.tab?.addEventListener("click", markSeen);
 showSection(["requests", "feedback"].includes(localStorage.getItem("inboxSection")) ? localStorage.getItem("inboxSection") : "reports");
 
 /// Count shown on a section button, e.g. "Reports 2".
@@ -151,14 +182,21 @@ function setSectionCount(name, count) {
     if (count > 0) button.append(el("span", "inbox-count", String(count)));
 }
 
-function setTabDot(waiting) {
+/// How many are waiting, on the Inbox tab itself.
+function setTabCount(waiting) {
     if (!els.tab) return;
-    els.tab.querySelector(".tab-due")?.remove();
+    els.tab.querySelector(".tab-count")?.remove();
     if (waiting > 0) {
-        const dot = el("span", "tab-due");
-        dot.title = `${waiting} waiting`;
-        els.tab.append(dot);
+        const count = el("span", "tab-count", String(waiting));
+        count.title = `${waiting} waiting`;
+        els.tab.append(count);
     }
+}
+
+/// "Handled 30 · 2 new" on a folded list.
+function setDoneCount(name, total, fresh) {
+    const span = document.getElementById(`${name}-done-count`);
+    if (span) span.textContent = total ? `${total}${fresh ? ` · ${fresh} new` : ""}` : "";
 }
 
 // ---------- Reports ----------
@@ -211,11 +249,15 @@ function suggestionBlock(r) {
 }
 
 function reportCard(r, history = []) {
-    const card = el("div", "inbox-item");
+    const fresh = r.reviewed
+        ? handledNew("reports", r.reviewedAt, r.reviewedBy)
+        : isNew("reports", r.at);
+    const card = el("div", `inbox-item ${r.reviewed ? "handled" : "waiting"}${fresh ? " is-new" : ""}`);
     card.dataset.reportId = r.id;
     const top = el("div", "inbox-item-top");
     const kind = KIND[r.type] || "Zzzap";
     top.append(el("span", "inbox-kind", `${kind} · ${r.reason === "auto_moderation" ? "Photo check" : r.reason || "No reason"}`));
+    if (fresh) top.append(newPill());
     // Safety Test Mode (11/6): the buttons only mark it handled.
     if (r.isTest) top.append(el("span", "inbox-test", "Test"));
     if (!r.reviewed && isRepeat(history)) top.append(el("span", "inbox-repeat", "Repeat"));
@@ -229,6 +271,8 @@ function reportCard(r, history = []) {
         top.append(el("span", "inbox-when", dateTime(r.at)));
     }
     card.append(top);
+    // Handled: what was done comes first, the content below it, dimmed.
+    if (r.reviewed) card.append(el("div", "inbox-done-line", doneLine(r)));
 
     if (r.type === "comment") {
         card.append(el("div", "inbox-quote", `“${r.commentText || ""}”`));
@@ -266,14 +310,7 @@ function reportCard(r, history = []) {
         card.append(line);
     }
 
-    if (r.reviewed) {
-        const what = r.type === "system" && !r.reviewAction
-            ? "Handled automatically"
-            : `${ACTION_DONE[r.reviewAction] || "Reviewed"}${r.reviewedByName ? ` by ${r.reviewedByName}` : ""}${r.reviewedAt ? `, ${dateTime(r.reviewedAt)}` : ""}`
-              + (r.reviewAction === "warn" ? (r.warningSeenAt ? ` · seen ${shortDate(toMillis(r.warningSeenAt))}` : " · not seen yet") : "");
-        card.append(el("div", "inbox-done-line", what));
-        return card;
-    }
+    if (r.reviewed) return card;
 
     const actions = el("div", "inbox-actions");
     const removeLabel = r.type === "comment" ? "Remove Comment" : r.type === "stormAnswer" ? "Remove Answer" : "Remove Zzzap";
@@ -291,6 +328,12 @@ function reportCard(r, history = []) {
     }
     card.append(actions);
     return card;
+}
+
+function doneLine(r) {
+    if (r.type === "system" && !r.reviewAction) return "Handled automatically";
+    return `${ACTION_DONE[r.reviewAction] || "Reviewed"}${r.reviewedByName ? ` by ${r.reviewedByName}` : ""}${r.reviewedAt ? `, ${dateTime(r.reviewedAt)}` : ""}`
+        + (r.reviewAction === "warn" ? (r.warningSeenAt ? ` · seen ${shortDate(toMillis(r.warningSeenAt))}` : " · not seen yet") : "");
 }
 
 // ---------- History: every other report about the same person ----------
@@ -439,6 +482,7 @@ function renderReports({ rows, sample }) {
     }
     els.reportsOpen.replaceChildren(...(open.length ? open.map(r => reportCard(r, historyOf(r))) : [el("p", "surge-muted", "Nothing waiting.")]));
     els.reportsDone.replaceChildren(...(done.length ? done.map(r => reportCard(r)) : [el("p", "surge-muted", "None yet.")]));
+    setDoneCount("reports", done.length, done.filter(r => handledNew("reports", r.reviewedAt, r.reviewedBy)).length);
     if (!sample) focusLinkedReport(rows);
     return sample ? 0 : open.length;
 }
@@ -471,6 +515,7 @@ function focusLinkedReport(rows) {
         setStatus("That report isn't in the list anymore.", "");
         return;
     }
+    card.closest("details")?.setAttribute("open", "");
     card.classList.add("inbox-focus");
     card.scrollIntoView({ behavior: "smooth", block: "center" });
     if (r.reviewed) {
@@ -508,10 +553,12 @@ async function loadRequests() {
 }
 
 function requestCard(r) {
-    const card = el("div", "inbox-item");
+    const open = r.status !== "fulfilled";
+    const fresh = open ? isNew("requests", r.at) : handledNew("requests", r.fulfilledAt, r.fulfilledBy);
+    const card = el("div", `inbox-item ${open ? "waiting" : "handled"}${fresh ? " is-new" : ""}`);
     const top = el("div", "inbox-item-top");
     top.append(el("span", "inbox-kind", r.name || "Unknown account"));
-    const open = r.status !== "fulfilled";
+    if (fresh) top.append(newPill());
     if (open) {
         const left = r.at + DATA_REQUEST_DUE_MS - Date.now();
         top.append(el("span", left < 7 * DAY ? "inbox-when inbox-late" : "inbox-when",
@@ -555,6 +602,7 @@ function renderRequests({ rows, sample }) {
     const done = rows.filter(r => r.status === "fulfilled").slice(0, 30);
     els.requestsOpen.replaceChildren(...(open.length ? open.map(requestCard) : [el("p", "surge-muted", "Nothing waiting.")]));
     els.requestsDone.replaceChildren(...(done.length ? done.map(requestCard) : [el("p", "surge-muted", "None yet.")]));
+    setDoneCount("requests", done.length, done.filter(r => handledNew("requests", r.fulfilledAt, r.fulfilledBy)).length);
     return sample ? 0 : open.length;
 }
 
@@ -577,10 +625,13 @@ async function loadFeedback() {
 }
 
 function feedbackCard(f) {
-    const card = el("div", "inbox-item");
+    const done = f.status === "done";
+    const fresh = done ? handledNew("feedback", f.handledAt, f.handledBy) : isNew("feedback", f.at);
+    const card = el("div", `inbox-item ${done ? "handled" : "waiting"}${fresh ? " is-new" : ""}`);
     card.dataset.feedbackId = f.id;
     const top = el("div", "inbox-item-top");
     top.append(el("span", "inbox-kind", FEEDBACK_KIND[f.category] || "Feedback"));
+    if (fresh) top.append(newPill());
     if (f.isTest) top.append(el("span", "inbox-test", "Test"));
     top.append(el("span", "inbox-when", dateTime(f.at)));
     card.append(top);
@@ -634,14 +685,16 @@ let focusedFeedbackId = null;
 function renderFeedback(rows) {
     const open = rows.filter(f => f.status !== "done");
     const done = rows.filter(f => f.status === "done").slice(0, 30);
-    els.feedbackOpen.replaceChildren(...(open.length ? open.map(feedbackCard) : [el("p", "surge-muted", "Nothing new.")]));
+    els.feedbackOpen.replaceChildren(...(open.length ? open.map(feedbackCard) : [el("p", "surge-muted", "Nothing waiting.")]));
     els.feedbackDone.replaceChildren(...(done.length ? done.map(feedbackCard) : [el("p", "surge-muted", "None yet.")]));
+    setDoneCount("feedback", done.length, done.filter(f => handledNew("feedback", f.handledAt, f.handledBy)).length);
     const id = linkedFeedbackId();
     if (id && id !== focusedFeedbackId) {
         focusedFeedbackId = id;
         showSection("feedback");
         const card = document.querySelector(`.inbox-item[data-feedback-id="${CSS.escape(id)}"]`);
         if (card) {
+            card.closest("details")?.setAttribute("open", "");
             card.classList.add("inbox-focus");
             card.scrollIntoView({ behavior: "smooth", block: "center" });
         }
@@ -663,7 +716,8 @@ async function refresh() {
     setSectionCount("reports", waitingReports);
     setSectionCount("requests", waitingRequests);
     setSectionCount("feedback", newFeedback);
-    setTabDot(waitingReports + waitingRequests + newFeedback);
+    setTabCount(waitingReports + waitingRequests + newFeedback);
+    markSeen();
 }
 
 els.refresh.addEventListener("click", () => { setStatus(""); refresh(); });

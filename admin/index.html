@@ -420,10 +420,10 @@
         .today-waiting li span { display: block; }
 
         /* Inbox tab (inbox.js) */
-        .inbox-top { display: flex; align-items: center; gap: 12px; max-width: 808px; }
+        .inbox-top { display: flex; align-items: center; gap: 12px; max-width: 760px; }
         .inbox-top .official-sections { margin-bottom: 16px; }
         .inbox-top .btn-secondary { margin: 0 0 16px auto; }
-        #inbox-status { max-width: 808px; }
+        #inbox-status { max-width: 760px; }
         .inbox-count { margin-left: 6px; font-weight: 700; }
         .inbox-item { padding: 14px 0; border-top: 1px solid #222; }
         .inbox-item-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -668,6 +668,61 @@
         .voice-row .btn-primary { flex-shrink: 0; }
 
         .mkt-anim { display: block; width: 100%; height: 340px; border: 1px solid #222; border-radius: 12px; background: #000; margin-bottom: 8px; }
+
+        /* Redesign (Stacy 11/14): the tab bar stays on top, waiting things are
+           raised cards, handled things fold away dimmer, and "New" marks what
+           came in since the last visit. */
+        .main-nav { position: sticky; top: 0; z-index: 20; background: #000; padding: 8px 0; margin: -8px 0 16px; }
+        .main-nav .admin-tabs { margin: 0; }
+        .tab-count, .inbox-count { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 6px; border-radius: 100px; background: #fff; color: #111; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; vertical-align: 1px; }
+        .admin-tab.active .tab-count, .admin-tab.active .inbox-count { background: #111; color: #fff; }
+        .inbox-h-note { color: #666; font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 6px; }
+        .raised, .inbox-item.waiting { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+        .surge-row.raised { border-top: 1px solid #2a2a2a; }
+        .inbox-item.waiting.is-new, .surge-row.raised.is-new { border-color: #666; }
+        .inbox-new { color: #111; background: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; padding: 1px 6px; }
+        .inbox-item.waiting.inbox-focus { margin: 0 0 10px; padding: 14px 16px; border-color: #f5c518; }
+        .inbox-item.handled { padding: 12px 0; }
+        .inbox-item.handled .inbox-done-line { color: #ccc; font-weight: 600; margin: 0 0 4px; }
+        .inbox-item.handled .inbox-quote, .inbox-item.handled .inbox-message { color: #888; font-size: 13px; margin: 0 0 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .inbox-item.handled .surge-meta, .inbox-item.handled .inbox-kind { color: #777; }
+        .inbox-item.handled .inbox-kind { font-size: 12px; }
+        .surge-row.dim .surge-name { color: #aaa; }
+        .surge-row.dim .surge-meta { color: #666; }
+        .inbox-done { margin-top: 20px; border-top: 1px solid #222; }
+        .inbox-done summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 14px 0 6px; color: #999; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+        .inbox-done summary::-webkit-details-marker { display: none; }
+        .inbox-done summary::before { content: "›"; color: #777; font-size: 18px; line-height: 1; width: 10px; transition: transform 0.15s; }
+        .inbox-done[open] > summary::before { transform: rotate(90deg); }
+        .inbox-done summary:hover { color: #fff; }
+        .inbox-done-count { color: #666; font-weight: 400; }
+        .inbox-playbook { margin: 16px 0 0; }
+
+        /* Reach People: list first, the form is its own screen (notes.js). */
+        .reach-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .reach-top h2 { margin: 0; }
+        .reach-top + .status-message:empty { display: none; }
+        .reach-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; max-width: 844px; }
+        .reach-bar h2 { flex: 1; color: #fff; font-size: 18px; font-weight: 700; margin: 0; }
+        .reach-close { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 15px; flex-shrink: 0; }
+        .reach-parked-link { display: block; color: #888; margin: 0 auto; }
+        #note-form > .surge-h3:first-child { margin-top: 0; }
+        #note-draft { min-height: 110px; }
+
+        @media (max-width: 600px) {
+            .inbox-top { flex-wrap: wrap; gap: 8px; }
+            .inbox-sections { display: flex; width: 100%; margin-bottom: 0 !important; }
+            .inbox-sections .admin-tab { flex: 1 1 auto; padding: 8px 6px; text-align: center; }
+            .inbox-top #inbox-refresh { margin: 0 0 4px auto; padding: 6px 14px; font-size: 13px; }
+            .inbox-item.waiting.inbox-focus { margin: 0 0 10px; padding: 14px 12px; }
+            .inbox-item.waiting { padding: 14px 12px; }
+            .notes-preview-card { display: none; }  /* the picked version is the preview */
+            .note-buttons { flex-wrap: wrap; }
+            .note-buttons .btn-secondary { flex: 1; min-height: 48px; }
+            .note-buttons .btn-primary { flex-basis: 100%; min-height: 52px; }
+            .reach-top .btn-primary { min-height: 44px; }
+            .note-row-actions button { min-height: 44px; }
+        }
     </style>
 </head>
 <body>
@@ -712,6 +767,8 @@
 
             <!-- Tabs, remembered per browser. "send" is Zzzap Official (the
                  old name is kept as the id so saved tabs and #send links work). -->
+            <!-- Stays at the top while scrolling, so any tab is one tap away on a phone. -->
+            <div class="main-nav">
             <div class="admin-tabs" role="tablist">
                 <!-- Tabs by job (Stacy 11/6). Ids stay the same so saved links work. -->
                 <button type="button" class="admin-tab" role="tab" data-tab="today">Today</button>
@@ -720,6 +777,7 @@
                 <button type="button" class="admin-tab" role="tab" data-tab="surge">Surge</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="stats">Numbers</button>
                 <button type="button" class="admin-tab" role="tab" data-tab="marketing">Brand</button>
+            </div>
             </div>
 
             <div class="admin-panel" data-panel="today" hidden>
@@ -739,22 +797,40 @@
             </div>
 
             <div class="admin-panel" data-panel="send" hidden>
-            <!-- Zzzap Official has two sections: Notes (notes.js) and Zzzaps. -->
-            <div class="admin-tabs official-sections" role="tablist">
-                <button type="button" class="admin-tab" role="tab" data-section="notes">Notes</button>
-                <button type="button" class="admin-tab" role="tab" data-section="zzzaps">Zzzaps (parked until 1.3)</button>
+            <!-- Reach People (Stacy 11/14): opens on the list of notes, waiting
+                 ones first. New Note and Edit open the form as its own screen.
+                 Official zzzaps are parked until 1.3, behind a link at the bottom.
+                 notes.js switches the views. -->
+            <div class="reach-view" data-reach-view="list">
+                <div class="card surge-panel-card">
+                    <div class="reach-top">
+                        <h2>Notes</h2>
+                        <button type="button" id="note-new-btn" class="btn-primary">New Note</button>
+                    </div>
+                    <div id="note-list-status" class="status-message"></div>
+                    <h3 class="surge-h3">Drafts and scheduled</h3>
+                    <div id="note-drafts"><p class="surge-muted">Loading…</p></div>
+                    <h3 class="surge-h3">Live on Home</h3>
+                    <div id="note-live"><p class="surge-muted">Loading…</p></div>
+                    <details class="inbox-done">
+                        <summary>Earlier <span id="note-earlier-count" class="inbox-done-count"></span></summary>
+                        <div id="note-sent"></div>
+                    </details>
+                </div>
+                <button type="button" id="reach-zzzaps-link" class="inbox-link reach-parked-link">Official zzzaps (parked until 1.3)</button>
             </div>
 
-            <div class="official-section" data-section="notes" hidden>
+            <div class="reach-view" data-reach-view="compose" hidden>
+            <div class="reach-bar">
+                <button type="button" id="note-close-btn" class="btn-secondary reach-close" aria-label="Close" title="Close">✕</button>
+                <h2 id="note-compose-title">New Note</h2>
+                <button type="button" id="note-voice-btn" class="btn-secondary note-voice-btn">Zzzap Voice</button>
+            </div>
             <div class="notes-grid">
                 <div>
                 <div class="card">
-                    <div class="note-head">
-                        <h2>Write a note</h2>
-                        <button type="button" id="note-voice-btn" class="btn-secondary note-voice-btn">Zzzap Voice</button>
-                    </div>
-                    <p class="surge-muted" style="margin: -8px 0 16px;">A card on Home under the status line. No push. People see it next time they open Zzzap. It clears after they close it, tap its button, see it on 3 visits, or 7 days. Notes have no weekly limit; that's for Official zzzaps.</p>
                     <form id="note-form" autocomplete="off">
+                        <h3 class="surge-h3">What it says</h3>
                         <div class="form-row">
                             <label for="note-draft">What do you want to say? <span class="note-count" data-for="note-draft"></span></label>
                             <textarea id="note-draft" maxlength="1000" placeholder="Plain words are fine. e.g. We added a wheel for picking how long a zzzap runs, and you can also pick an exact end time." required></textarea>
@@ -781,10 +857,9 @@
                             <input type="text" id="note-link" placeholder="https://zzzap-app.com/...">
                         </div>
 
-                        <h3 class="surge-h3">In the Zzzap voice</h3>
+                        <h3 class="surge-h3">Pick the words</h3>
                         <div class="form-row voice-row">
                             <button type="button" id="note-say-btn" class="btn-primary">Say It Like Zzzap</button>
-                            <span class="surge-muted voice-hint">Every note is written in the Zzzap voice. You get 3 versions; pick the one to send. To change the words, change what you typed and write it again.</span>
                         </div>
                         <div id="note-say-results" class="voice-results"></div>
 
@@ -800,11 +875,11 @@
                             </div>
                             <div id="note-people-results"></div>
                             <div id="note-people-chips" class="surge-chips"></div>
-                            <p class="surge-muted" style="font-size: 12px;">Search finds accounts that can be found in the app. Hidden accounts don't show.</p>
+                            <p class="surge-muted" style="font-size: 12px;">Hidden accounts don't show.</p>
                         </div>
-                        <p class="surge-muted note-later">Coming later: no circle yet · never sent a zzzap · new this week · Power · Spark · Surge accounts</p>
 
-                        <div class="form-row" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 16px;">
+                        <h3 class="surge-h3">When</h3>
+                        <div class="form-row" style="display: flex; align-items: flex-start; gap: 10px;">
                             <input type="checkbox" id="note-schedule-toggle" style="margin-top: 4px; accent-color: #f5c518;">
                             <label for="note-schedule-toggle" style="margin-bottom: 0; cursor: pointer; flex: 1;">
                                 <strong style="color: #fff; font-size: 14px;">Schedule for later</strong>
@@ -815,7 +890,7 @@
                             <input type="datetime-local" id="note-send-at">
                         </div>
 
-                        <h3 class="surge-h3">Before you send</h3>
+                        <h3 class="surge-h3">Check and send</h3>
                         <div id="note-check" class="note-check">
                             <p class="surge-muted">Check who gets it first. Send stays off until you do, and again after any change.</p>
                         </div>
@@ -828,16 +903,6 @@
                         </div>
                         <div id="note-status" class="status-message"></div>
                     </form>
-                </div>
-
-                <div class="card">
-                    <h2>Drafts and scheduled</h2>
-                    <div id="note-drafts"><p class="surge-muted">Loading…</p></div>
-                </div>
-
-                <div class="card">
-                    <h2>Sent</h2>
-                    <div id="note-sent"><p class="surge-muted">Loading…</p></div>
                 </div>
                 </div>
 
@@ -869,9 +934,13 @@
                     <div id="note-voice-body"><p class="surge-muted">Loading…</p></div>
                 </div>
             </dialog>
-            </div> <!-- /notes section -->
+            </div> <!-- /compose view -->
 
-            <div class="official-section" data-section="zzzaps" hidden>
+            <div class="reach-view" data-reach-view="zzzaps" hidden>
+            <div class="reach-bar">
+                <button type="button" id="reach-zzzaps-close" class="btn-secondary reach-close" aria-label="Close" title="Close">✕</button>
+                <h2>Official zzzaps</h2>
+            </div>
             <div class="admin-grid">
 
             <!-- Templates sidebar -->
@@ -996,7 +1065,7 @@
             </div>
             </div> <!-- /right column -->
             </div> <!-- /admin-grid -->
-            </div> <!-- /zzzaps section -->
+            </div> <!-- /zzzaps view -->
             </div> <!-- /send panel -->
 
             <div class="admin-panel" data-panel="surge" hidden>
@@ -1028,7 +1097,7 @@
             <div class="admin-panel" data-panel="inbox" hidden>
             <!-- Inbox: someone is waiting on us. Reports and Data Requests (inbox.js) -->
             <div class="inbox-top">
-                <div class="admin-tabs official-sections" role="tablist">
+                <div class="admin-tabs official-sections inbox-sections" role="tablist">
                     <button type="button" class="admin-tab" role="tab" data-inbox-section="reports">Reports</button>
                     <button type="button" class="admin-tab" role="tab" data-inbox-section="requests">Data Requests</button>
                     <button type="button" class="admin-tab" role="tab" data-inbox-section="feedback">Feedback</button>
@@ -1039,6 +1108,8 @@
 
             <div class="inbox-section" data-inbox-section="reports">
             <div class="card surge-panel-card">
+                <h3 class="surge-h3">Waiting <span class="inbox-h-note">oldest first</span></h3>
+                <div id="reports-open"></div>
                 <!-- The playbook. Same rules Claude suggests from
                      (zap/functions/reportAdvice.js); change both together. -->
                 <details class="inbox-playbook">
@@ -1067,21 +1138,21 @@
                     <h4>Claude's suggestion</h4>
                     <p>Each new report gets a suggested button and one reason, from these same rules. It helps you think; you decide.</p>
                 </details>
-                <h3 class="surge-h3">Needs action</h3>
-                <p class="surge-muted" style="margin-bottom: 4px;">Oldest first. The goal is under 24 hours.</p>
-                <div id="reports-open"></div>
-                <h3 class="surge-h3">Done</h3>
-                <div id="reports-done"></div>
+                <details class="inbox-done">
+                    <summary>Handled <span id="reports-done-count" class="inbox-done-count"></span></summary>
+                    <div id="reports-done"></div>
+                </details>
             </div>
             </div>
 
             <div class="inbox-section" data-inbox-section="requests" hidden>
             <div class="card surge-panel-card">
-                <h3 class="surge-h3">Needs action</h3>
-                <p class="surge-muted" style="margin-bottom: 4px;">From Me, Request My Data. Each one is due 30 days after it's asked.</p>
+                <h3 class="surge-h3">Waiting <span class="inbox-h-note">due 30 days after asked</span></h3>
                 <div id="requests-open"></div>
-                <h3 class="surge-h3">Done</h3>
-                <div id="requests-done"></div>
+                <details class="inbox-done">
+                    <summary>Handled <span id="requests-done-count" class="inbox-done-count"></span></summary>
+                    <div id="requests-done"></div>
+                </details>
             </div>
             </div>
 
@@ -1089,11 +1160,12 @@
                  is also emailed to support@; this is the record. -->
             <div class="inbox-section" data-inbox-section="feedback" hidden>
             <div class="card surge-panel-card">
-                <h3 class="surge-h3">New</h3>
-                <p class="surge-muted" style="margin-bottom: 4px;">From Contact Us in the app. Reply opens an email back to them; Mark Done files it.</p>
+                <h3 class="surge-h3">Waiting</h3>
                 <div id="feedback-open"></div>
-                <h3 class="surge-h3">Done</h3>
-                <div id="feedback-done"></div>
+                <details class="inbox-done">
+                    <summary>Handled <span id="feedback-done-count" class="inbox-done-count"></span></summary>
+                    <div id="feedback-done"></div>
+                </details>
             </div>
             </div>
             </div> <!-- /inbox panel -->
@@ -1181,13 +1253,20 @@
                 });
                 panels.forEach(p => { p.hidden = p.dataset.panel !== name; });
                 localStorage.setItem("adminTab", name);
+                // On a phone the tab bar scrolls sideways: keep the picked tab in view.
+                tabs.find(t => t.dataset.tab === name)?.scrollIntoView({ block: "nearest", inline: "nearest" });
             }
             function startTab() {
                 // "#inbox/<reportId>" (the report email's link) opens the Inbox.
                 const fromHash = location.hash.replace("#", "").split("/")[0];
                 return allowed.includes(fromHash) ? fromHash : "today";
             }
-            tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.tab)));
+            tabs.forEach(t => t.addEventListener("click", () => {
+                const switching = !t.classList.contains("active");
+                show(t.dataset.tab);
+                // A new tab starts at its top, under the tab bar.
+                if (switching) window.scrollTo({ top: 0 });
+            }));
             window.adminTabs = {
                 allow(names) {
                     allowed = names && names.length ? names : tabs.map(t => t.dataset.tab);
@@ -1198,27 +1277,11 @@
             show(startTab());
         })();
 
-        // Zzzap Official sections: Notes and Zzzaps, remembered per browser.
-        (function () {
-            const buttons = [...document.querySelectorAll(".admin-tab[data-section]")];
-            const sections = document.querySelectorAll(".official-section");
-            function show(name) {
-                buttons.forEach(b => {
-                    const on = b.dataset.section === name;
-                    b.classList.toggle("active", on);
-                    b.setAttribute("aria-selected", on ? "true" : "false");
-                });
-                sections.forEach(s => { s.hidden = s.dataset.section !== name; });
-                localStorage.setItem("officialSection", name);
-            }
-            buttons.forEach(b => b.addEventListener("click", () => show(b.dataset.section)));
-            show(localStorage.getItem("officialSection") === "zzzaps" ? "zzzaps" : "notes");
-        })();
     </script>
     <script type="module" src="today.js?v=3"></script>
-    <script type="module" src="notes.js?v=8"></script>
+    <script type="module" src="notes.js?v=9"></script>
     <script type="module" src="surge.js?v=5"></script>
-    <script type="module" src="inbox.js?v=12"></script>
+    <script type="module" src="inbox.js?v=13"></script>
     <script type="module" src="stats.js?v=12"></script>
     <script type="module" src="marketing.js?v=6"></script>
 </body>

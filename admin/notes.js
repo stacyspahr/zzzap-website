@@ -48,7 +48,12 @@ const els = {
     sendBtn: $("note-send-btn"),
     status: $("note-status"),
     drafts: $("note-drafts"),
+    live: $("note-live"),
     sent: $("note-sent"),
+    earlierCount: $("note-earlier-count"),
+    listStatus: $("note-list-status"),
+    composeTitle: $("note-compose-title"),
+    views: [...document.querySelectorAll(".reach-view")],
     previewTitle: $("note-preview-title"),
     previewBody: $("note-preview-body"),
     previewButton: $("note-preview-button"),
@@ -97,6 +102,7 @@ function serverNotReady(err) {
     return err && (err.code === "functions/not-found" || err.code === "not-found");
 }
 
+const LIVE_MS = 7 * 24 * 60 * 60 * 1000;
 const WAITING = "This works once Zak's server piece is in (backend/OFFICIAL-NOTES-SPEC.md).";
 
 function audienceMode() {
@@ -118,6 +124,43 @@ async function nameFor(uid) {
     nameCache.set(uid, name);
     return name;
 }
+
+// ---------- Views: the list, writing a note, parked Official zzzaps ----------
+// Reach People opens on the list (Stacy 11/14). New Note and Edit open the
+// form as its own screen; ✕ goes back.
+
+function showView(name) {
+    els.views.forEach(v => { v.hidden = v.dataset.reachView !== name; });
+    window.scrollTo({ top: 0 });
+}
+
+function setListStatus(message, kind = "") {
+    els.listStatus.textContent = message;
+    els.listStatus.className = `status-message ${kind}`;
+}
+
+function openComposer(title) {
+    els.composeTitle.textContent = title;
+    setListStatus("");
+    showView("compose");
+}
+
+$("note-new-btn").addEventListener("click", () => {
+    clearForm();
+    setStatus("");
+    openComposer("New Note");
+});
+
+$("note-close-btn").addEventListener("click", () => {
+    const typed = els.draft.value.trim() || chosen;
+    if (typed && !confirm("Close without saving? Save Draft keeps it.")) return;
+    clearForm();
+    setStatus("");
+    showView("list");
+});
+
+$("reach-zzzaps-link").addEventListener("click", () => showView("zzzaps"));
+$("reach-zzzaps-close").addEventListener("click", () => showView("list"));
 
 // ---------- The note being written ----------
 
@@ -358,10 +401,12 @@ async function save(action) {
         } else if (action === "test") {
             setStatus("Sent to you. Open Zzzap to see it on Home.", "success");
         } else {
-            setStatus(scheduling
+            setListStatus(scheduling
                 ? `Scheduled for ${formatWhen(new Date(sendAt))}.`
                 : `Sent to ${data.delivered}. ${data.skipped ? `${data.skipped} skipped.` : ""}`, "success");
             clearForm();
+            setStatus("");
+            showView("list");
         }
     } catch (err) {
         // The website login isn't the app login, so a test needs the
@@ -428,8 +473,8 @@ async function loadIntoForm(id, n) {
     applyAction();
     applyAudience();
     changed();
-    setStatus(`Editing "${n.title}". To change the words, change what it says and write it again.`);
-    els.form.scrollIntoView({ behavior: "smooth" });
+    setStatus("");
+    openComposer(n.status === "scheduled" ? "Edit Scheduled Note" : "Edit Draft");
 }
 
 async function removeNote(id, n) {
@@ -457,8 +502,8 @@ function audienceSummary(aud) {
     return "Everyone";
 }
 
-async function noteRow(id, n) {
-    const row = el("div", "surge-row");
+async function noteRow(id, n, style = "") {
+    const row = el("div", `surge-row ${style}`.trim());
     const info = el("div", "surge-info");
     info.append(el("div", "surge-name", n.title || "Untitled"));
     info.append(el("div", "surge-meta", n.body || ""));
@@ -500,17 +545,26 @@ function startNotesListener() {
     unsubNotes = onSnapshot(q, async (snap) => {
         const docs = snap.docs.map(d => [d.id, d.data()]);
         const open = docs.filter(([, n]) => n.status === "draft" || n.status === "scheduled");
-        const done = docs.filter(([, n]) => n.status === "sent" || n.status === "cancelled");
+        // A note clears from Home after 7 days at the most, so a newer sent
+        // one may still be showing. Older ones and cancelled ones fold away.
+        const sentAt = n => n.sentAt?.toMillis ? n.sentAt.toMillis() : 0;
+        const live = docs.filter(([, n]) => n.status === "sent" && Date.now() - sentAt(n) < LIVE_MS);
+        const earlier = docs.filter(([id, n]) => (n.status === "sent" || n.status === "cancelled") && !live.some(([liveId]) => liveId === id));
         els.drafts.replaceChildren(...(open.length
-            ? await Promise.all(open.map(([id, n]) => noteRow(id, n)))
+            ? await Promise.all(open.map(([id, n]) => noteRow(id, n, "raised")))
             : [el("p", "surge-muted", "None.")]));
-        els.sent.replaceChildren(...(done.length
-            ? await Promise.all(done.map(([id, n]) => noteRow(id, n)))
-            : [el("p", "surge-muted", "No notes sent yet.")]));
+        els.live.replaceChildren(...(live.length
+            ? await Promise.all(live.map(([id, n]) => noteRow(id, n, "raised")))
+            : [el("p", "surge-muted", "None right now.")]));
+        els.sent.replaceChildren(...(earlier.length
+            ? await Promise.all(earlier.map(([id, n]) => noteRow(id, n, "dim")))
+            : [el("p", "surge-muted", "None yet.")]));
+        els.earlierCount.textContent = earlier.length ? String(earlier.length) : "";
     }, () => {
         // Rules or the collection aren't there yet.
         const waiting = el("p", "surge-muted", "Shows up once Zak's server piece is in.");
         els.drafts.replaceChildren(waiting);
+        els.live.replaceChildren(waiting.cloneNode(true));
         els.sent.replaceChildren(waiting.cloneNode(true));
     });
 }
