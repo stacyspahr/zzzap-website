@@ -90,7 +90,7 @@ function renderItem(item) {
     head.append(el("strong", "", item.label), el("span", `appwords-state${picks[item.id] ? " done" : ""}`, picks[item.id] ? "Picked" : "Not picked yet"));
     row.append(head);
 
-    row.append(el("div", "appwords-label", "In the app now (hand-written)"), wordsBlock(item.current, "appwords-current"));
+    row.append(el("div", "appwords-label", "In the app now"), wordsBlock(item.current, "appwords-current"));
 
     row.append(el("div", "appwords-label", "What it should say"));
     const draft = el("textarea", "appwords-draft");
