@@ -58,7 +58,7 @@ const SOCIAL_STALE_DAYS = 7;
 // actual number: 29 people the week of Nov 2, 7% more each week after.
 const GOALS = {
     growth: { start: new Date(2026, 10, 2), startValue: 29, weekly: 0.07, milestone: 100 },
-    rates: { "Came back": 0.60, "After a month": 0.40, "Vote rate": 0.70 },
+    rates: { "Came back": 0.60, "After a month": 0.40, "Vote rate": 0.70, "Vote guess": 0.75 },
 };
 
 // Goal for the week containing `when`, or null before the goals started.
@@ -124,6 +124,12 @@ const INFO = {
         ["Left out", `${LEFT_OUT} Zzzaps still running, since they'd make the rate look low. Cancelled zzzaps.`],
         ["Good to know", "Bigger zzzaps weigh more: one sent to 40 people counts 40 times as much as one sent to 1. People who passed on a zzzap count as not voting."],
     ],
+    "Vote guess": [
+        ["What it is", "How close the line in New (\"About 5 usually vote by then\") came to what really happened: the share of finished zzzaps that landed within 1 vote of the guess, and the average miss."],
+        ["Where the numbers come from", "Finished zzzaps sent in the last 30 days that saved a guess when they were sent. The guess is compared with how many of the people it went to voted (not the sender)."],
+        ["Left out", `${LEFT_OUT} Zzzaps with no guess: Surge, edits, and senders with fewer than 5 past zzzaps or fewer than 2 people. Cancelled zzzaps.`],
+        ["Good to know", "On for everyone since 11/15, so the count grows from there. Guessed high means fewer voted than it said. Bigger zzzaps miss by more votes, so the share within 1 vote drops as zzzaps get bigger."],
+    ],
     "Strike vs Storm": [
         ["What it is", "How many Strikes (pick an answer) and Storms (write an answer) were sent in the last 30 days, Strike first. Plus how many had photo answers."],
         ["Where the numbers come from", "The type saved on each zzzap. Older zzzaps saved under the old names (Bolt and Buzz) count as Strike and Storm. A zzzap with no type counts as Strike, the same as the app."],
@@ -186,6 +192,7 @@ const GOAL_INFO = {
     "Came back": () => "60% or more. For social apps, more than half coming back the next week means Zzzap is turning into a habit.",
     "After a month": () => "40% or more. Most apps lose most people within a month, so keeping 4 in 10 is strong. It's the first number a buyer or investor asks for.",
     "Vote rate": () => "70% or more. Zzzap's promise is fast answers; below 7 in 10, senders start to feel ignored.",
+    "Vote guess": () => "75% or more within 1 vote. That's where the first hand check landed on 11/1 for zzzaps sent to 2 to 10 people. Below it, the line in New promises more than people get.",
 };
 
 let loaded = false;
@@ -364,6 +371,24 @@ function buildLiveBoxes(allPolls, appPeople) {
         answered += recipients.filter(uid => voters[uid] !== undefined).length;
     }
 
+    // Vote guess: the expectedVotes saved at send vs who really voted.
+    let guessed = 0, withinOne = 0, missTotal = 0, high = 0, low = 0;
+    for (const p of sent) {
+        const end = endTime(p);
+        if (typeof p.expectedVotes !== "number" || !end || end.getTime() > now) continue;
+        const voters = p.voters || {};
+        const real = (p.recipients || []).filter(uid => uid !== p.creatorId && voters[uid] !== undefined).length;
+        const miss = real - p.expectedVotes;
+        guessed += 1;
+        missTotal += Math.abs(miss);
+        if (Math.abs(miss) <= 1) withinOne += 1;
+        else if (miss < 0) high += 1;
+        else low += 1;
+    }
+    const guessDetail = guessed
+        ? `${withinOne} of ${guessed} finished zzzaps within 1 vote. Average miss ${(missTotal / guessed).toFixed(1)} votes. Guessed high ${high}, low ${low}. Last 30 days`
+        : "No finished zzzaps with a guess yet, last 30 days";
+
     const storms = sent.filter(p => p.pollType === "storm" || p.pollType === "buzz").length;
     const photos = sent.filter(p => p.isPhotoPoll).length;
     const cancelled = polls.length - sent.length;
@@ -400,6 +425,7 @@ function buildLiveBoxes(allPolls, appPeople) {
         { title: "Came back", value: percent(cameBack, activeBefore.size), detail: `${cameBack} of ${activeBefore.size} active the week before were active again this week`, goal: rateGoal("Came back", cameBack, activeBefore.size) },
         { title: "After a month", value: percent(stayed, activeMonthAgo.size), detail: `${stayed} of ${activeMonthAgo.size} active 4 weeks ago were active again this week`, goal: rateGoal("After a month", stayed, activeMonthAgo.size) },
         { title: "Vote rate", value: percent(answered, asked), detail: `${answered} of ${asked} people asked voted. Finished zzzaps, last 30 days`, goal: rateGoal("Vote rate", answered, asked) },
+        { title: "Vote guess", value: percent(withinOne, guessed), detail: guessDetail, goal: rateGoal("Vote guess", withinOne, guessed) },
         { title: "Strike vs Storm", value: `${sent.length - storms} / ${storms}`, detail: `Last 30 days. ${photos} with photos` },
         { title: "People per zzzap", value: avgAsked, detail: `Average sent to, last 30 days. ${cancelled} cancelled` },
     ];
