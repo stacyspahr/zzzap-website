@@ -84,8 +84,8 @@
           "plain": "A short title for a screen that plays a looping video of someone voting from a zzzap notification, and one short line under the video telling them how: long-press the notification, then tap an answer. The title shows at the top of the screen, so keep it very short.",
           "buttonFor": null,
           "current": {
-            "title": "Vote Without Opening Zzzap",
-            "body": "Long-press, then tap your answer.",
+            "title": "Press, tap, done",
+            "body": "Your crew asked. Long-press the notification, then tap your answer.",
             "button": ""
           }
         }
