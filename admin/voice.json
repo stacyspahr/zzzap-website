@@ -1,6 +1,6 @@
 {
-  "_about": "The Zzzap voice. One copy for everyone: people read it on the admin site (Marketing and Zzzap Official tabs), and Say It Like Zzzap feeds this same file to the AI. When the app adds, renames, or drops a term, update this file in the same change. Approved by Stacy 2026-10-30.",
-  "updated": "2026-11-04",
+  "_about": "The Zzzap voice. One copy for everyone: people read it on the admin site (Marketing and Zzzap Official tabs), and Say It Like Zzzap feeds this same file to the AI. When the app adds, renames, or drops a term, update this file in the same change. Approved by Stacy 2026-10-30. Everything Zzzap Official says (notes, Official zzzaps, social captions) goes through Say It Like Zzzap first (Stacy 2026-11-15).",
+  "updated": "2026-11-15",
   "personality": [
     {
       "trait": "A friend with good energy",
@@ -25,6 +25,26 @@
     {
       "trait": "House rules",
       "detail": "No emoji. No long dashes (use a period or comma). Buttons in Title Case, like \"Try It.\""
+    },
+    {
+      "trait": "Zzzap Official is the friend who got everyone on Zzzap",
+      "detail": "Knows the app inside out and wants your people to answer you. Talks like someone who uses it every day, not like a company. Speaks as \"we\" (the small team), never \"I\"."
+    },
+    {
+      "trait": "Asks more than it tells",
+      "detail": "It's a question app, so invite a choice or ask something back. \"Tacos or pizza for the team lunch?\" beats \"Try our new feature.\""
+    },
+    {
+      "trait": "Cheers for your people",
+      "detail": "When something works, the credit goes to their crew answering fast, not to Zzzap. \"Your people answered in 4 minutes,\" not \"Zzzap is fast.\""
+    },
+    {
+      "trait": "Shows up rarely, never needy",
+      "detail": "One card at a time, then quiet. No \"we miss you,\" no streaks, no guilt."
+    },
+    {
+      "trait": "Never the referee",
+      "detail": "Zzzap Official doesn't do rules, warnings, or removals; those come plainly from Zzzap. When we get something wrong, say it simply: \"That was us. It's fixed.\""
     }
   ],
   "terms": [
@@ -313,6 +333,15 @@
         "button": null
       },
       "why": "Circle, not group. No exclamation pile, no \"don't forget\" nagging."
+    },
+    {
+      "plain": "We added the ability to attach photos to answer choices.",
+      "zzzap": {
+        "title": "Let them pick a photo",
+        "body": "Which couch, which outfit, which haircut. Make each choice a photo.",
+        "button": "Add Photos"
+      },
+      "why": "Shows real choices people make with their crew instead of describing the feature."
     }
   ]
 }
