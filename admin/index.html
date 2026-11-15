@@ -664,6 +664,16 @@
         .voice-option { cursor: pointer; text-align: left; width: 100%; font-weight: 400; }
         .voice-option.chosen { border-color: #f5c518; }
         .voice-option-pick { flex-shrink: 0; color: #777; font-size: 13px; font-weight: 600; }
+        /* Zzzap Official → App Words (appwords.js) */
+        .appwords-item { border-top: 1px solid #222; padding-top: 16px; margin-top: 16px; }
+        .appwords-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+        .appwords-state { color: #777; font-size: 13px; font-weight: 600; }
+        .appwords-state.done { color: #f5c518; }
+        .appwords-label { color: #777; font-size: 12px; font-weight: 600; margin: 10px 0 6px; }
+        .appwords-current { background: #161616; border: 1px dashed #333; border-radius: 12px; padding: 12px 14px; }
+        .appwords-draft { width: 100%; min-height: 64px; margin-bottom: 10px; }
+        .appwords-item .voice-results { margin-top: 12px; }
+        .appwords-footer { display: flex; justify-content: flex-end; gap: 10px; }
         .voice-option.chosen .voice-option-pick { color: #f5c518; }
         .voice-row .btn-primary { flex-shrink: 0; }
 
@@ -817,7 +827,26 @@
                         <div id="note-sent"></div>
                     </details>
                 </div>
+                <button type="button" id="reach-appwords-link" class="inbox-link reach-parked-link">App Words</button>
                 <button type="button" id="reach-zzzaps-link" class="inbox-link reach-parked-link">Official zzzaps (parked until 1.3)</button>
+            </div>
+
+            <!-- App Words (Stacy 11/15): words built into the app that speak as
+                 Zzzap Official, each run through Say It Like Zzzap. appwords.js. -->
+            <div class="reach-view" data-reach-view="appwords" hidden>
+                <div class="reach-bar">
+                    <button type="button" id="appwords-close" class="btn-secondary reach-close" aria-label="Close" title="Close">✕</button>
+                    <h2>App Words</h2>
+                    <span id="appwords-count" class="surge-muted"></span>
+                </div>
+                <div id="appwords-list"></div>
+                <div class="card surge-panel-card">
+                    <div class="appwords-footer">
+                        <button type="button" id="appwords-copy" class="btn-secondary">Copy</button>
+                        <button type="button" id="appwords-save" class="btn-primary">Save for Claude</button>
+                    </div>
+                    <div id="appwords-status" class="status-message"></div>
+                </div>
             </div>
 
             <div class="reach-view" data-reach-view="compose" hidden>
@@ -1280,6 +1309,7 @@
     </script>
     <script type="module" src="today.js?v=4"></script>
     <script type="module" src="notes.js?v=10"></script>
+    <script type="module" src="appwords.js?v=1"></script>
     <script type="module" src="surge.js?v=5"></script>
     <script type="module" src="inbox.js?v=14"></script>
     <script type="module" src="stats.js?v=12"></script>

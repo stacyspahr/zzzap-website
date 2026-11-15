@@ -1,0 +1,47 @@
+{
+  "_about": "Words built into the app that speak as Zzzap Official. Every one goes through Say It Like Zzzap (Stacy 2026-11-15). Claude keeps this list current: a new built-in Official line is added here in the same change, with what it should say in plain words. Picks come back to Claude as a file (Save for Claude).",
+  "updated": "2026-11-15",
+  "groups": [
+    {
+      "name": "Ladder cards",
+      "where": "Home, one card at a time (NotesLadder.swift)",
+      "items": [
+        {
+          "id": "ladder.firstZzzap",
+          "label": "1. Send your first zzzap",
+          "plain": "Encourage them to send their first zzzap: ask their people something small, like where to eat or which shoes, and let them vote.",
+          "buttonFor": "the New tab",
+          "current": { "title": "Ask your people something", "body": "Dinner spot, paint color, which shoes. They vote, you decide.", "button": "Send a Zzzap" }
+        },
+        {
+          "id": "ladder.lockScreenVote",
+          "label": "3. Vote from the Lock Screen",
+          "plain": "Show them they can vote on a zzzap right from the notification without opening the app: long-press the notification and tap an answer.",
+          "buttonFor": "a short video showing how",
+          "current": { "title": "Vote without opening Zzzap", "body": "When a zzzap comes in, long-press the notification and tap your answer.", "button": "Show Me" }
+        },
+        {
+          "id": "ladder.makeCircle",
+          "label": "4. Make a circle",
+          "plain": "Suggest making a circle, like Family or Work, so they can send to all of those people in one tap.",
+          "buttonFor": "the Make a Circle screen",
+          "current": { "title": "Send to the right people", "body": "Make a circle like Family or Work, then send to all of them in one tap.", "button": "Make a Circle" }
+        },
+        {
+          "id": "ladder.tryStorm",
+          "label": "5. Try a Storm",
+          "plain": "Suggest trying a Storm: an open question where their people write in the answers and the matching ones stack up.",
+          "buttonFor": "the New tab set to Storm",
+          "current": { "title": "Let them fill in the blank", "body": "In a Storm, your people write the answers and the favorites stack up.", "button": "Try a Storm" }
+        },
+        {
+          "id": "ladder.addPhoto",
+          "label": "6. Add a photo",
+          "plain": "Suggest a photo zzzap, where each answer choice is a photo, for things like which couch or which outfit. Only shown to people who have Power or their free try left; for free-try people the app adds \"Your first one's on us.\" after the text.",
+          "buttonFor": "the New tab with photo choices on",
+          "current": { "title": "Let them pick a photo", "body": "Which couch, which outfit, which haircut. Make each choice a photo.", "button": "Add Photos" }
+        }
+      ]
+    }
+  ]
+}
