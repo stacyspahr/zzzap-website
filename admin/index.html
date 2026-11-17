@@ -706,6 +706,8 @@
         .ladder-draft-row { margin: 16px 0 8px; }
         .ladder-order { display: flex; gap: 10px; flex-wrap: wrap; }
         .ladder-remove { margin-left: auto; }
+        .ladder-th { background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted #555; text-underline-offset: 3px; }
+        .ladder-th:hover { color: #fff; }
         .ladder-preview-card { position: sticky; top: 24px; }
         .ladder-preview-card h2 { margin-top: 0; }
         .ladder-note { position: relative; background: #1c1c1e; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 18px; }
@@ -1270,6 +1272,15 @@
                 </div>
                 <div id="ladder-step"></div>
             </div>
+            <dialog id="ladder-info" class="stats-dialog">
+                <div class="stats-dialog-inner">
+                    <div class="stats-dialog-top">
+                        <h3 id="ladder-info-title"></h3>
+                        <button type="button" id="ladder-info-close" class="btn-secondary">Close</button>
+                    </div>
+                    <div id="ladder-info-body"></div>
+                </div>
+            </dialog>
             </div> <!-- /ladder panel -->
 
             <div class="admin-panel" data-panel="stats" hidden>
@@ -1387,6 +1398,6 @@
     <script type="module" src="inbox.js?v=14"></script>
     <script type="module" src="stats.js?v=14"></script>
     <script type="module" src="marketing.js?v=6"></script>
-    <script type="module" src="ladder.js?v=2"></script>
+    <script type="module" src="ladder.js?v=3"></script>
 </body>
 </html>

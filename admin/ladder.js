@@ -180,10 +180,96 @@ function pct(part, whole) {
     return whole ? `${Math.round((100 * part) / whole)}%` : "–";
 }
 
+// What each number means, opened by tapping its box or its column header
+// (same Info dialog as the Numbers tab). Functions, so the pacing numbers
+// in the words are the saved ones.
+const INFO = {
+    "On the ladder": () => [
+        ["What it is", "How many people have a ladder record: their app saved one the first time they landed on Home."],
+        ["Left out", "Anyone on an app older than 1.1.4, guests, and people who haven't opened the app since updating. Until 1.1.4 is out, that's everyone but TestFlight."],
+    ],
+    "Card up now": () => [
+        ["What it is", "People with a ladder card on Home as of their last app open. On a step, just the people on that step."],
+        ["Good to know", "A From Zzzap note or the people card goes first, so some of these are waiting behind one."],
+    ],
+    "Finished": () => [
+        ["What it is", "People who did every step that's on, or moved past it."],
+        ["Good to know", "Adding a step or turning one back on puts people back on the ladder until they do it."],
+    ],
+    "Turned it off": () => [
+        ["What it is", "People who turned off Tips on Home in Me. They get no ladder cards."],
+    ],
+    "Sent this week, finished": () => [
+        ["What it is", "Of the people who finished the ladder, the share who sent a zzzap to a real person in the last 7 days."],
+        ["Good to know", "Compare it with the box next to it. A gap doesn't prove the ladder did it: people who already send a lot finish fast because their steps get skipped."],
+    ],
+    "Sent this week, still going": () => [
+        ["What it is", "Of the people still on the ladder, the share who sent a zzzap to a real person in the last 7 days."],
+        ["Left out", "Sends to themselves, the demo crew or Zzzap Official, and cancelled zzzaps."],
+    ],
+    "Step": () => [
+        ["What it is", "The card's title and what counts as doing it. Tap a row to see its numbers bigger and change the step."],
+        ["Good to know", "New words keep the step's numbers, so they add up across every version of its words."],
+    ],
+    "Shown": () => [
+        ["What it is", "People who've had this card on Home at least once."],
+    ],
+    "Views": () => [
+        ["What it is", "Every time a card was on Home, added up for everyone. One person can count more than once."],
+        ["Good to know", "Only one view per app open. Views divided by Shown is how many opens it usually stays up."],
+    ],
+    "Tapped the button": () => [
+        ["What it is", "Taps on the card's button, added up for everyone."],
+        ["Good to know", "Tapping the button closes the card, even if they then don't do it. Unless the step is done when they tap the button, it can come back later."],
+    ],
+    "Tapped ✕": () => [
+        ["What it is", "Taps on the card's ✕, added up for everyone."],
+        ["Good to know", `After a ✕ the card comes back after ${pacing.opensAfterClose} app opens.`],
+    ],
+    "Closed on its own": () => [
+        ["What it is", `Times the card went away by itself after ${pacing.visitsBeforeClose} visits without them doing it.`],
+        ["Good to know", "It counts like a ✕, so it can come back once."],
+    ],
+    "Did it after the card": () => [
+        ["What it is", "People who did the step after its card first showed. It counts if they did it later, or without tapping the card."],
+        ["Good to know", "The Lock Screen step: votes from the Lock Screen weren't recorded before 11/15, so a few of these already knew how. The box also shows the usual number of days from the card to doing it."],
+    ],
+    "Already knew it": () => [
+        ["What it is", "People who did the step before its card ever showed, so it was skipped for them."],
+    ],
+    "Gave up": () => [
+        ["What it is", `People who closed the card ${pacing.closesBeforeMovingOn} times without doing it, so the ladder moved on to the next step.`],
+        ["Good to know", "A high number means the card isn't landing. Try new words, a different button, or a later spot."],
+    ],
+};
+
+// Column headers → the INFO entry that explains them.
+const HEADER_INFO = {
+    "Step": "Step", "Shown": "Shown", "Views": "Views", "Button": "Tapped the button", "✕": "Tapped ✕",
+    "Timed out": "Closed on its own", "Did it": "Did it after the card", "Knew it": "Already knew it",
+    "Gave up": "Gave up", "Now": "Card up now",
+};
+
+function showInfo(key) {
+    $("ladder-info-title").textContent = key;
+    $("ladder-info-body").replaceChildren(...(INFO[key]?.() || []).map(([heading, text]) => {
+        const section = el("div", "stat-info-section");
+        section.append(el("h4", "", heading), el("p", "", text));
+        return section;
+    }));
+    $("ladder-info").showModal();
+}
+$("ladder-info-close").addEventListener("click", () => $("ladder-info").close());
+
+// The whole box is a button that opens its explanation.
 function statBox(title, value, detail) {
-    const box = el("div", "stat-box");
-    box.append(el("div", "stat-title", title), el("div", "stat-value", String(value)));
+    const box = el("button", "stat-box");
+    box.type = "button";
+    const head = el("div", "stat-head");
+    head.append(el("div", "stat-title", title), el("span", "stat-info", "Info"));
+    box.append(head, el("div", "stat-value", String(value)));
     if (detail) box.append(el("div", "stat-detail", detail));
+    box.addEventListener("click", () => showInfo(title));
     return box;
 }
 
@@ -211,7 +297,11 @@ function renderList() {
     renderSummary();
     const table = el("table", "ladder-table");
     const head = el("tr");
-    ["", "Step", "Shown", "Views", "Button", "✕", "Timed out", "Did it", "Knew it", "Gave up", "Now"].forEach(h => head.append(el("th", "", h)));
+    ["", "Step", "Shown", "Views", "Button", "✕", "Timed out", "Did it", "Knew it", "Gave up", "Now"].forEach(h => {
+        const th = el("th");
+        if (h) th.append(button(h, "ladder-th", () => showInfo(HEADER_INFO[h])));
+        head.append(th);
+    });
     table.append(head);
 
     steps.forEach((step, i) => {
@@ -360,7 +450,7 @@ function renderStep() {
             statBox("Tapped the button", s.taps),
             statBox("Tapped ✕", s.xs),
             statBox("Closed on its own", s.timeouts),
-            statBox("Gave up", s.gaveUp, "Closed it twice, moved on"),
+            statBox("Gave up", s.gaveUp),
             statBox("Card up now", s.onItNow),
         );
         numbers.append(grid);
