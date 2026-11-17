@@ -1,22 +1,11 @@
 {
   "_about": "Words built into the app that speak as Zzzap Official. Every one goes through Say It Like Zzzap (Stacy 2026-11-15). Claude keeps this list current: a new built-in Official line is added here in the same change, with what it should say in plain words. \"current\" is what the app ships (picked 11/15). Picks come back to Claude as a file (Save for Claude).",
-  "updated": "2026-11-15",
+  "updated": "2026-11-17",
   "groups": [
     {
-      "name": "Ladder cards",
-      "where": "Home, one card at a time (NotesLadder.swift)",
+      "name": "People card",
+      "where": "Home, until 3 people are connected (ladder step 2). The other ladder cards are edited in the Ladder tab.",
       "items": [
-        {
-          "id": "ladder.firstZzzap",
-          "label": "1. Send your first zzzap",
-          "plain": "Encourage them to send their first zzzap: ask their people something small, like where to eat or which shoes, and let them vote.",
-          "buttonFor": "the New tab",
-          "current": {
-            "title": "Tacos or pizza? Ask your crew.",
-            "body": "Your first zzzap can be tiny. Where to eat, which shoes. Write the choices and let your people vote.",
-            "button": "Send a Zzzap"
-          }
-        },
         {
           "id": "ladder.bringPeople",
           "label": "2. Bring in 3 people",
@@ -26,50 +15,6 @@
             "title": "1 of 3 people connected",
             "body": "Think of the people you already ask for advice. Zzzap works best once 3 of them are on it. Who's first?",
             "button": "Invite Your People"
-          }
-        },
-        {
-          "id": "ladder.lockScreenVote",
-          "label": "3. Vote from the Lock Screen",
-          "plain": "Show them they can vote on a zzzap right from the notification without opening the app: long-press the notification and tap an answer.",
-          "buttonFor": "a short video showing how",
-          "current": {
-            "title": "Answer right from the notification",
-            "body": "When a zzzap comes in, long-press the notification and tap an answer. That's your vote, no need to open the app.",
-            "button": "Watch How"
-          }
-        },
-        {
-          "id": "ladder.makeCircle",
-          "label": "4. Make a circle",
-          "plain": "Suggest making a circle, like Family or Work, so they can send to all of those people in one tap.",
-          "buttonFor": "the Make a Circle screen",
-          "current": {
-            "title": "Your people, one tap away",
-            "body": "Make a circle for Family, Work, or whoever you ask most, and send your next zzzap to all of them at once.",
-            "button": "New Circle"
-          }
-        },
-        {
-          "id": "ladder.tryStorm",
-          "label": "5. Try a Storm",
-          "plain": "Suggest trying a Storm: an open question where their people write in the answers and the matching ones stack up.",
-          "buttonFor": "the New tab set to Storm",
-          "current": {
-            "title": "Out of ideas? Borrow your crew's.",
-            "body": "Send a Storm and let your people write in their own answers. Matching ones stack up on the board, so you can see where everyone lands.",
-            "button": "Start a Storm"
-          }
-        },
-        {
-          "id": "ladder.addPhoto",
-          "label": "6. Add a photo",
-          "plain": "Suggest a photo zzzap, where each answer choice is a photo, for things like which couch or which outfit. Only shown to people who have Power or their free try left; for free-try people the app adds \"Your first one's on us.\" after the text.",
-          "buttonFor": "the New tab with photo choices on",
-          "current": {
-            "title": "Which couch? Let your crew decide",
-            "body": "Snap the ones you're stuck between and make each choice a photo. Your people pick, you get your evening back.",
-            "button": "Make a Photo Zzzap"
           }
         }
       ]
