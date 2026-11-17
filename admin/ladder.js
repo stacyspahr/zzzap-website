@@ -468,7 +468,47 @@ function renderStep() {
     remove.disabled = steps.length === 1;
     order.append(up, down, remove);
 
-    box.replaceChildren(words, form, numbers, order);
+    const left = el("div");
+    left.append(words, form, numbers, order);
+    const grid = el("div", "notes-grid");
+    grid.append(left, previewCard(step));
+    box.replaceChildren(grid);
+}
+
+// What it looks like on Home: the app's Zzzap Official card (ZzzapNoteCard).
+let previewEls = null;
+
+function previewCard(step) {
+    const card = el("div", "card ladder-preview-card");
+    card.append(el("h2", "", "Preview"));
+    const phone = el("div", "note-phone");
+    const note = el("div", "ladder-note");
+    const top = el("div", "ladder-note-top");
+    const avatar = el("img", "ladder-note-avatar");
+    avatar.src = "zzzap-bolts.svg";
+    avatar.alt = "";
+    top.append(avatar, el("span", "", "Zzzap Official"));
+    const title = el("div", "ladder-note-title");
+    const body = el("div", "ladder-note-body");
+    const btn = el("div", "ladder-note-button");
+    note.append(el("span", "ladder-note-x", "✕"), top, title, body, btn);
+    phone.append(el("div", "note-status-line", "All caught up."), note);
+    card.append(phone);
+    previewEls = { title, body, btn };
+    showPreview(step);
+    return card;
+}
+
+// The step's words, or a version being looked at (hover).
+function showPreview(step, words) {
+    if (!previewEls) return;
+    const w = words || { title: step.title, body: step.body, label: step.label };
+    previewEls.title.textContent = w.title || "Title";
+    previewEls.title.classList.toggle("note-placeholder", !w.title);
+    previewEls.body.textContent = w.body || "Say It Like Zzzap, then pick a version to see it here.";
+    previewEls.body.classList.toggle("note-placeholder", !w.body);
+    previewEls.btn.hidden = step.buttonKey === "";
+    previewEls.btn.textContent = w.label || "Button";
 }
 
 function renderVersions(step, results, refreshGate) {
@@ -477,6 +517,8 @@ function renderVersions(step, results, refreshGate) {
         const row = el("button", `voice-option${isPicked ? " chosen" : ""}`);
         row.type = "button";
         row.append(wordsBlock({ title: option.title, body: option.body, label: option.button }), el("span", "voice-option-pick", isPicked ? "Picked" : "Pick"));
+        row.addEventListener("mouseenter", () => showPreview(step, { title: option.title, body: option.body, label: option.button }));
+        row.addEventListener("mouseleave", () => showPreview(step));
         row.addEventListener("click", () => {
             step.title = option.title;
             step.body = option.body;

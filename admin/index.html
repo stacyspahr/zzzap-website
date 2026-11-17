@@ -706,6 +706,17 @@
         .ladder-draft-row { margin: 16px 0 8px; }
         .ladder-order { display: flex; gap: 10px; flex-wrap: wrap; }
         .ladder-remove { margin-left: auto; }
+        .ladder-preview-card { position: sticky; top: 24px; }
+        .ladder-preview-card h2 { margin-top: 0; }
+        .ladder-note { position: relative; background: #1c1c1e; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 18px; }
+        .ladder-note-x { position: absolute; top: 14px; right: 16px; color: #8e8e93; font-size: 12px; font-weight: 600; }
+        .ladder-note-top { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+        .ladder-note-avatar { width: 28px; height: 28px; padding: 5px; border-radius: 50%; background: #000; border: 1px solid rgba(255,255,255,.12); box-sizing: border-box; }
+        .ladder-note-title { color: #fff; font-size: 19px; font-weight: 600; line-height: 1.25; margin-bottom: 6px; word-break: break-word; }
+        .ladder-note-body { color: #8e8e93; font-size: 14px; line-height: 1.45; padding-right: 12px; word-break: break-word; }
+        .ladder-note-button { margin-top: 16px; background: #f5c518; color: #000; font-size: 16px; font-weight: 600; text-align: center; padding: 13px; border-radius: 100px; }
+        .ladder-note-button[hidden] { display: none; }
+        @media (max-width: 880px) { .ladder-preview-card { position: static; } }
 
         .mkt-anim { display: block; width: 100%; height: 340px; border: 1px solid #222; border-radius: 12px; background: #000; margin-bottom: 8px; }
 
@@ -1376,6 +1387,6 @@
     <script type="module" src="inbox.js?v=14"></script>
     <script type="module" src="stats.js?v=14"></script>
     <script type="module" src="marketing.js?v=6"></script>
-    <script type="module" src="ladder.js?v=1"></script>
+    <script type="module" src="ladder.js?v=2"></script>
 </body>
 </html>
