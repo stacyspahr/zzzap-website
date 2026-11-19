@@ -273,6 +273,13 @@ function reportCard(r, history = []) {
     card.append(top);
     // Handled: what was done comes first, the content below it, dimmed.
     if (r.reviewed) card.append(el("div", "inbox-done-line", doneLine(r)));
+    // Their "Ask Us to Look Again" from the warning note (sendFeedback stamps
+    // reports/{id}.appeal; the message is also in Feedback and the email).
+    if (r.appeal) {
+        const at = toMillis(r.appeal.at);
+        card.append(el("div", "inbox-history-line inbox-late",
+            `Asked to look again${at ? `, ${dateTime(at)}` : ""}: “${r.appeal.message || ""}”`));
+    }
 
     if (r.type === "comment") {
         card.append(el("div", "inbox-quote", `“${r.commentText || ""}”`));
