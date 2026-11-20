@@ -1,6 +1,6 @@
 {
   "_about": "The Zzzap voice. One copy for everyone: people read it on the admin site (Marketing and Zzzap Official tabs), and Say It Like Zzzap feeds this same file to the AI. When the app adds, renames, or drops a term, update this file in the same change. Approved by Stacy 2026-10-30. Everything Zzzap Official says (notes, Official zzzaps, social captions) goes through Say It Like Zzzap first (Stacy 2026-11-15).",
-  "updated": "2026-11-15",
+  "updated": "2026-11-19",
   "personality": [
     {
       "trait": "A friend with good energy",
@@ -293,6 +293,15 @@
         "message",
         "alert",
         "push"
+      ]
+    },
+    {
+      "say": "Text Someone Not on Zzzap",
+      "means": "Send a Strike to a friend who isn't on Zzzap: you text them a link from Messages and they vote on a web page, no app needed. If they join from the link, you're connected. People already on Zzzap get it in the app, not by text. In TestFlight 11/19, not on the App Store yet: don't mention it in posts or notes until it ships.",
+      "avoid": [
+        "SMS invite",
+        "text blast",
+        "invite by text"
       ]
     }
   ],
