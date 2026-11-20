@@ -2,12 +2,30 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["XK9K77G62A.spahr.zap"],
+        "appIDs": [
+          "XK9K77G62A.spahr.zap"
+        ],
         "components": [
-          { "/": "/invite/*", "comment": "Invite links: open the app and connect both people" },
-          { "/": "/u/*", "comment": "Profile codes (the QR): open that person's profile" },
-          { "/": "/@*", "comment": "Surge pages (the web page's Open in the app link): open that Surge profile" },
-          { "/": "/tiktok/*", "comment": "TikTok Share Kit returning to the app after Post Everywhere" }
+          {
+            "/": "/z/*",
+            "comment": "Text a zzzap links: open the app, connect both people, carry the vote over"
+          },
+          {
+            "/": "/invite/*",
+            "comment": "Invite links: open the app and connect both people"
+          },
+          {
+            "/": "/u/*",
+            "comment": "Profile codes (the QR): open that person's profile"
+          },
+          {
+            "/": "/@*",
+            "comment": "Surge pages (the web page's Open in the app link): open that Surge profile"
+          },
+          {
+            "/": "/tiktok/*",
+            "comment": "TikTok Share Kit returning to the app after Post Everywhere"
+          }
         ]
       }
     ]
