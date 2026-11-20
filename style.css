@@ -151,26 +151,32 @@ header {
     position: relative;
 }
 
-/* Socials under the App Store badge (Stacy, 11/20): a handle, then its
-   logos. White, yellow on hover; each link is a 44px tap target. */
+/* Socials under the App Store badge (Stacy, 11/20): who it is, then their
+   logos. Names line up on the right, logos start together on the left.
+   White, yellow on hover; each link is a 44px tap target. */
 .socials {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: center;
     align-items: center;
-    gap: 4px;
+    column-gap: 8px;
+    row-gap: 4px;
     margin-top: 20px;
 }
 
 .social-row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+    display: contents;
 }
 
 .social-name {
     font-size: 13px;
     color: #8e8e93;
-    margin-right: 6px;
+    text-align: right;
+}
+
+.social-links {
+    display: flex;
+    gap: 2px;
 }
 
 .socials a {
