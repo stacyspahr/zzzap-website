@@ -31,6 +31,7 @@ const BUTTONS = {
     "screen:lockScreenVote": ["Lock Screen voting video", { type: "screen", screen: "lockScreenVote" }, "a short video showing how"],
     "screen:invitePeople": ["Invite people", { type: "screen", screen: "invitePeople" }, "a page for inviting people by text"],
     "screen:feedback": ["Send Feedback", { type: "screen", screen: "feedback" }, "a form to send us feedback"],
+    "screen:commentZzzap": ["Their finished zzzap, at the comment box", { type: "screen", screen: "commentZzzap" }, "their latest finished zzzap, open at the box where they say how it turned out"],
     "tab:zzzaps": ["Zzzaps tab", { type: "tab", tab: "zzzaps" }, "the Zzzaps tab"],
     "tab:people": ["People tab", { type: "tab", tab: "people" }, "the People tab"],
     "tab:me": ["Me tab", { type: "tab", tab: "me" }, "the Me tab"],
@@ -44,6 +45,7 @@ const DONE_WHEN = {
     sentPhoto: "Sends a photo zzzap",
     madeCircle: "Makes a circle",
     lockScreenVote: "Votes from the Lock Screen",
+    postedComment: "Says how a zzzap turned out",
     tappedButton: "Taps the button",
 };
 
