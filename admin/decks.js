@@ -26,6 +26,7 @@ export const PROSPECTS = [
     { name: "Michael Trupia", note: "Insurance · COUNTRY Financial", page: `${VOTE}/demoinsurance/` },
     { name: "503 Distilling", note: "Distillery · SE Portland", page: `${VOTE}/demo503/` },
     { name: "Throne Barbershop", note: "Barbershop · 3 Portland shops", page: `${VOTE}/demobarber/` },
+    { name: "The Mill House", note: "Bed & Breakfast · Hines, Oregon", page: `${VOTE}/demomillhouse/` },
 ];
 
 function button(className, text) {
