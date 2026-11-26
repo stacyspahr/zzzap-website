@@ -1,6 +1,6 @@
 {
   "_about": "Words built into the app that speak as Zzzap Official. Every one goes through Say It Like Zzzap (Stacy 2026-11-15). Claude keeps this list current: a new built-in Official line is added here in the same change, with what it should say in plain words. \"current\" is what the app ships (picked 11/15). Picks come back to Claude as a file (Save for Claude).",
-  "updated": "2026-11-17",
+  "updated": "2026-11-26",
   "groups": [
     {
       "name": "People card",
@@ -32,6 +32,45 @@
             "title": "Press, tap, done",
             "body": "Your crew asked. Long-press the notification, then tap your answer.",
             "button": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "New in 1.2",
+      "where": "A card first on Home (only a warning goes ahead) for people who already had Zzzap, the first time they open 1.2; its Show Me opens a tour (WhatsNewView.swift). Each tour page is a looping demo video, \"New in 1.2\", the title, and one yellow button. On the tour pages only the title and the button show; the line under the title is not used (few words, the video explains).",
+      "items": [
+        {
+          "id": "whatsNew.card",
+          "label": "The Home card",
+          "plain": "Tell them, excited, that 1.2 is here with something we've wanted to give them: they can text a zzzap to anyone, even friends who don't have Zzzap, and those friends vote from the text and can be in their circles. Short title, one short line. The button opens a short video tour.",
+          "buttonFor": "a short video tour of what's new",
+          "current": {
+            "title": "New in 1.2: text a zzzap to anyone",
+            "body": "Friends without Zzzap can vote from a text, and they can be in your circles too.",
+            "button": "Show Me"
+          }
+        },
+        {
+          "id": "whatsNew.text",
+          "label": "Page 1: text a zzzap",
+          "plain": "Announce that they can now send a zzzap by text to anyone, including people who don't have Zzzap. Those people vote on a web page from the text, no app needed, Android too. Very short title, it's the whole message. The button opens New with their contacts showing so they can try it now.",
+          "buttonFor": "the New tab, open at picking people from Contacts to text a zzzap to",
+          "current": {
+            "title": "Text a zzzap to anyone",
+            "body": "",
+            "button": "Try It"
+          }
+        },
+        {
+          "id": "whatsNew.circles",
+          "label": "Page 2: people not on Zzzap in circles",
+          "plain": "Announce that their circles can now hold people who aren't on Zzzap, like the friend who'll never get the app. Pick the circle and those people get the zzzap by text. Very short title. The button opens their circles.",
+          "buttonFor": "their circles, where they can add someone not on Zzzap",
+          "current": {
+            "title": "Anyone can be in your circles",
+            "body": "",
+            "button": "Open Circles"
           }
         }
       ]
