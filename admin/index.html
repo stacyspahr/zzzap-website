@@ -635,6 +635,7 @@
         .note-status-line { color: #555; font-size: 13px; text-align: center; margin-bottom: 14px; }
         .note-card { background: #1c1c1e; border-radius: 16px; padding: 10px 16px 16px; }
         .note-card-top { display: flex; justify-content: space-between; color: #8e8e93; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+        .note-yellow-word { color: #f5c518; }
         .note-card-title { color: #fff; font-size: 16px; font-weight: 600; margin-bottom: 4px; word-break: break-word; }
         .note-card-body { color: #8e8e93; font-size: 14px; line-height: 1.35; word-break: break-word; }
         .note-card-button { display: inline-block; margin-top: 12px; background: #f5c518; color: #000; font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 100px; }
@@ -935,6 +936,12 @@
                             <button type="button" id="note-say-btn" class="btn-primary">Say It Like Zzzap</button>
                         </div>
                         <div id="note-say-results" class="voice-results"></div>
+                        <div class="form-row hidden" id="note-yellow-row" style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" id="note-yellow" checked style="margin-top: 4px; accent-color: #f5c518;">
+                            <label for="note-yellow" style="margin-bottom: 0; cursor: pointer; flex: 1;">
+                                <strong style="color: #fff; font-size: 14px;">Yellow word</strong>
+                            </label>
+                        </div>
 
                         <h3 class="surge-h3">Who gets it</h3>
                         <div class="note-audience">
@@ -1392,7 +1399,7 @@
 
     </script>
     <script type="module" src="today.js?v=4"></script>
-    <script type="module" src="notes.js?v=10"></script>
+    <script type="module" src="notes.js?v=11"></script>
     <script type="module" src="appwords.js?v=2"></script>
     <script type="module" src="surge.js?v=6"></script>
     <script type="module" src="inbox.js?v=15"></script>

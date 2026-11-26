@@ -57,6 +57,8 @@ const els = {
     previewTitle: $("note-preview-title"),
     previewBody: $("note-preview-body"),
     previewButton: $("note-preview-button"),
+    yellow: $("note-yellow"),
+    yellowRow: $("note-yellow-row"),
 };
 
 const ACTION_NAMES = {
@@ -184,7 +186,7 @@ function buildNote() {
     const audience = mode === "everyone" ? { mode } : { mode, uids: [...picked.keys()] };
     if (mode === "only" && !audience.uids.length) throw new Error("Pick at least one person.");
 
-    return { voiceVersionId: chosen.id, buttonAction, audience, title: chosen.title };
+    return { voiceVersionId: chosen.id, buttonAction, audience, highlight: !!yellowWord(), title: chosen.title };
 }
 
 /// Milliseconds since 1970 for a scheduled send, or null.
@@ -231,10 +233,49 @@ function updateCounts() {
     });
 }
 
+// The yellow word or phrase (Stacy, 11/26): same rule as the app (ZzzapNotes.swift) and
+// the server (zzzapVoice.js findWord): the first whole-word match, title
+// first, then the text. Only one spot turns yellow.
+function findWord(text, word) {
+    const t = String(text || "").toLowerCase();
+    const w = String(word || "").toLowerCase();
+    if (!w) return -1;
+    const isWordChar = c => c !== undefined && /[\p{L}\p{N}']/u.test(c);
+    for (let i = t.indexOf(w); i >= 0; i = t.indexOf(w, i + 1)) {
+        if (!isWordChar(t[i - 1]) && !isWordChar(t[i + w.length])) return i;
+    }
+    return -1;
+}
+
+/// Fills `node` with `text`, the yellow word wrapped in a span when `word` is set.
+function fillWithYellow(node, text, word) {
+    const i = word ? findWord(text, word) : -1;
+    if (i < 0) { node.textContent = text; return false; }
+    node.replaceChildren(
+        document.createTextNode(text.slice(0, i)),
+        el("span", "note-yellow-word", text.slice(i, i + word.length)),
+        document.createTextNode(text.slice(i + word.length)));
+    return true;
+}
+
+/// Title and text with the yellow word in whichever comes first.
+function fillTitleAndBody(titleNode, bodyNode, title, body, word) {
+    const inTitle = fillWithYellow(titleNode, title, word);
+    fillWithYellow(bodyNode, body, inTitle ? "" : word);
+}
+
+function yellowWord() {
+    return chosen?.highlight && els.yellow.checked ? chosen.highlight : "";
+}
+
 function updatePreview() {
-    els.previewTitle.textContent = chosen ? chosen.title : "Title";
+    els.yellowRow.classList.toggle("hidden", !chosen?.highlight);
+    if (chosen) fillTitleAndBody(els.previewTitle, els.previewBody, chosen.title, chosen.body, yellowWord());
+    else {
+        els.previewTitle.textContent = "Title";
+        els.previewBody.textContent = "Pick a version to see it here.";
+    }
     els.previewTitle.classList.toggle("note-placeholder", !chosen);
-    els.previewBody.textContent = chosen ? chosen.body : "Pick a version to see it here.";
     els.previewBody.classList.toggle("note-placeholder", !chosen);
     els.previewButton.hidden = !els.action.value;
     els.previewButton.textContent = chosen?.button || "Button";
@@ -455,7 +496,8 @@ async function loadIntoForm(id, n) {
     els.link.value = a?.type === "link" ? a.url : "";
     // The saved words stay picked until what it says or the button changes.
     if (n.voiceVersionId) {
-        chosen = { id: n.voiceVersionId, title: n.title, body: n.body, button: n.button?.label || "" };
+        chosen = { id: n.voiceVersionId, title: n.title, body: n.body, button: n.button?.label || "", highlight: n.highlight || "" };
+        els.yellow.checked = true;
         versions = [chosen];
         writtenFor = voiceInput();
         renderVersions();
@@ -615,11 +657,15 @@ function renderVersions() {
         const row = el("button", `voice-option${chosen?.id === option.id ? " chosen" : ""}`);
         row.type = "button";
         const text = el("div");
-        text.append(el("div", "voice-option-title", option.title), el("div", "voice-option-body", option.body));
+        const title = el("div", "voice-option-title");
+        const body = el("div", "voice-option-body");
+        fillTitleAndBody(title, body, option.title, option.body, option.highlight);
+        text.append(title, body);
         if (option.button) text.append(el("div", "voice-option-button", option.button));
         row.append(text, el("span", "voice-option-pick", chosen?.id === option.id ? "Picked" : "Pick"));
         row.addEventListener("click", () => {
             chosen = option;
+            els.yellow.checked = true;
             renderVersions();
             changed();
         });

@@ -1,6 +1,6 @@
 {
   "_about": "The Zzzap voice. One copy for everyone: people read it on the admin site (Marketing and Zzzap Official tabs), and Say It Like Zzzap feeds this same file to the AI. When the app adds, renames, or drops a term, update this file in the same change. Approved by Stacy 2026-10-30. Everything Zzzap Official says (notes, Official zzzaps, social captions) goes through Say It Like Zzzap first (Stacy 2026-11-15).",
-  "updated": "2026-11-19",
+  "updated": "2026-11-26",
   "personality": [
     {
       "trait": "A friend with good energy",
@@ -310,7 +310,8 @@
     "Never promise anything the app doesn't do, and never mention features that aren't out yet.",
     "Don't say \"free forever.\"",
     "Fine to say: Zzzap never tracks people for ads, and brands only ever see totals.",
-    "A note: title up to 60 characters, text up to 280, button words up to 20.",
+    "A note: title up to 30 characters (2 to 5 words, a headline, never a full sentence), text up to 280, button words up to 20.",
+    "A note has one yellow word or short phrase (up to 4 words): what matters most, shown in yellow in the app. Never just \"Zzzap\" or a small word like \"the\".",
     "A zzzap question: short enough to read at a glance on a Lock Screen.",
     "A Surge badge reads \"Category · Surge,\" for example \"Golf Instructor · Surge.\"",
     "For the logo, use the real bolt files, never the ⚡ emoji. Emoji colors change by phone and never match our yellow."
