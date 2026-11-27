@@ -112,10 +112,10 @@ document.getElementById("no-access-signout").addEventListener("click", () => sig
 //   owner      Stacy, Zak: everything
 //   moderator  the Inbox only
 //   marketing  Brand only (Haley)
-// Planned source (Zak): admins/{uid}.role, readable by that person. Until his
-// rule is in, the old config/adminRoles map still works, and an account with
-// no role counts as an owner only if it can read reports (an admins-only read).
-// Anyone else gets "No access". Hiding tabs is a convenience; the server rules
+// Source: admins/{uid}.role, readable by that person (the old config/adminRoles
+// map was deleted 11/27, Zak 7a.1). If that read fails, an account counts as an
+// owner only if it can read reports (an admins-only read). Anyone else gets
+// "No access". Hiding tabs is a convenience; the server rules
 // are what actually keep private data private.
 const ROLE_TABS = { owner: null, moderator: ["today", "inbox"], marketing: ["marketing"] };
 
@@ -123,28 +123,15 @@ async function roleFor(uid) {
     try {
         const own = await getDoc(doc(db, "admins", uid));
         if (own.exists()) return ROLE_TABS.hasOwnProperty(own.data().role) ? own.data().role : "owner";
-        // Readable but missing: not on the list (the old map may still say marketing).
-        return await legacyRole(uid);
+        // Readable but missing: not on the list.
+        return null;
     } catch (_) {
-        // Zak's self-read rule isn't in yet.
-        const legacy = await legacyRole(uid);
-        if (legacy) return legacy;
         try {
             await getDocs(query(collection(db, "reports"), limit(1)));
             return "owner";
         } catch (err) {
             return null;
         }
-    }
-}
-
-async function legacyRole(uid) {
-    try {
-        const snap = await getDoc(doc(db, "config", "adminRoles"));
-        const role = snap.exists() ? snap.data()[uid] : null;
-        return ROLE_TABS.hasOwnProperty(role) ? role : null;
-    } catch (err) {
-        return null;
     }
 }
 
