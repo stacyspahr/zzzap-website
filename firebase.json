@@ -1,0 +1,29 @@
+{
+  "hosting": {
+    "site": "spahrzap",
+    "public": ".",
+    "ignore": ["firebase.json", ".firebaserc", ".github/**", ".git/**", "**/.DS_Store", ".gitignore", ".nojekyll", "CNAME"],
+    "cleanUrls": false,
+    "rewrites": [
+      { "source": "/invite/**", "destination": "/link.html" },
+      { "source": "/u/**", "destination": "/link.html" },
+      { "source": "/@*", "destination": "/link.html" },
+      { "source": "/z/**", "destination": "/link.html" },
+      { "source": "/tiktok/**", "destination": "/link.html" }
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      },
+      {
+        "source": "**/*.@(html|json)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "/",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ]
+  }
+}

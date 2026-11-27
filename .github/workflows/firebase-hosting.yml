@@ -1,0 +1,22 @@
+# Push to main = live, same as GitHub Pages was: every push deploys this site
+# to Firebase Hosting (project spahrzap). The key is the repo secret
+# FIREBASE_SERVICE_ACCOUNT_SPAHRZAP (a Hosting-only service account).
+name: Deploy to Firebase Hosting
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Firebase always answers 404.html with a 404 status, which kills link
+      # previews, so the link pages are served from a copy with a 200.
+      - run: cp 404.html link.html
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SPAHRZAP }}
+          projectId: spahrzap
+          channelId: live
